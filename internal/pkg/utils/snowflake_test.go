@@ -13,7 +13,7 @@ func TestInitSnowflake(t *testing.T) {
 }
 
 func TestGenerateID(t *testing.T) {
-	InitSnowflake(1)
+	_ = InitSnowflake(1)
 
 	id := GenerateID()
 	if id == 0 {
@@ -27,7 +27,7 @@ func TestGenerateID(t *testing.T) {
 }
 
 func TestGenerateID_Uniqueness(t *testing.T) {
-	InitSnowflake(1)
+	_ = InitSnowflake(1)
 
 	ids := make(map[int64]bool)
 	count := 10000
@@ -42,7 +42,7 @@ func TestGenerateID_Uniqueness(t *testing.T) {
 }
 
 func TestGenerateID_Concurrent(t *testing.T) {
-	InitSnowflake(1)
+	_ = InitSnowflake(1)
 
 	var wg sync.WaitGroup
 	ids := make(chan int64, 10000)
@@ -76,7 +76,7 @@ func TestGenerateID_Concurrent(t *testing.T) {
 }
 
 func TestGenerateOrderNo(t *testing.T) {
-	InitSnowflake(1)
+	_ = InitSnowflake(1)
 
 	orderNo := GenerateOrderNo()
 	if orderNo == "" {
@@ -93,7 +93,7 @@ func TestGenerateOrderNo(t *testing.T) {
 }
 
 func TestGenerateTicket(t *testing.T) {
-	InitSnowflake(1)
+	_ = InitSnowflake(1)
 
 	ticket := GenerateTicket()
 	if ticket == "" {
@@ -106,7 +106,7 @@ func TestGenerateTicket(t *testing.T) {
 }
 
 func BenchmarkGenerateID(b *testing.B) {
-	InitSnowflake(1)
+	_ = InitSnowflake(1)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -115,7 +115,7 @@ func BenchmarkGenerateID(b *testing.B) {
 }
 
 func BenchmarkGenerateOrderNo(b *testing.B) {
-	InitSnowflake(1)
+	_ = InitSnowflake(1)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
