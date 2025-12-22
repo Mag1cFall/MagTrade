@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { createProduct, createFlashSale } from '@/api/admin'
-import { Loader2, Plus, Package, Zap } from 'lucide-vue-next'
+import { getProducts } from '@/api/product'
+import type { Product } from '@/types'
+import { Loader2, Plus, Package, Zap, RefreshCw } from 'lucide-vue-next'
 
 const activeTab = ref<'product' | 'flash_sale'>('product')
+const products = ref<Product[]>([])
 const loading = ref(false)
 const message = ref('')
 const messageType = ref<'success' | 'error'>('success')
@@ -52,6 +55,23 @@ const handleCreateProduct = async () => {
     loading.value = false
   }
 }
+
+const fetchProducts = async () => {
+  try {
+    const res = await getProducts(1, 100)
+    if (res.code === 0) {
+      products.value = res.data.products
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+watch(activeTab, (val) => {
+  if (val === 'flash_sale') {
+    fetchProducts()
+  }
+})
 
 const handleCreateFlashSale = async () => {
   loading.value = true
@@ -139,8 +159,34 @@ const handleCreateFlashSale = async () => {
               <input v-model.number="productForm.original_price" type="number" step="0.01" required class="w-full bg-black/50 border border-white/10 px-4 py-2 text-white focus:border-accent outline-none" />
             </div>
             <div class="space-y-2">
-              <label class="text-xs text-secondary uppercase tracking-widest">Image URL</label>
-              <input v-model="productForm.image_url" type="url" placeholder="https://..." class="w-full bg-black/50 border border-white/10 px-4 py-2 text-white focus:border-accent outline-none" />
+              <label class="text-xs text-secondary uppercase tracking-widest">Digital Asset</label>
+              
+              <!-- Visual Selector -->
+              <div class="grid grid-cols-4 gap-3 mb-3">
+                <button
+                  type="button"
+                  v-for="type in ['phone', 'laptop', 'headphone', 'box']"
+                  :key="type"
+                  @click="productForm.image_url = `local:${type}`"
+                  :class="[
+                    'py-3 border text-xs font-bold uppercase tracking-wider transition-all duration-300',
+                    productForm.image_url === `local:${type}`
+                      ? 'bg-accent text-white border-accent shadow-[0_0_15px_rgba(255,59,48,0.3)]'
+                      : 'bg-black/30 border-white/10 text-secondary hover:bg-white/5 hover:border-white/30'
+                  ]"
+                >
+                  {{ type }}
+                </button>
+              </div>
+
+              <div class="relative group">
+                <input
+                  v-model="productForm.image_url"
+                  type="text"
+                  placeholder="Select above or paste URL..."
+                  class="w-full bg-black/50 border border-white/10 px-4 py-2 text-white focus:border-accent outline-none text-xs font-mono tracking-wide"
+                />
+              </div>
             </div>
           </div>
 
@@ -154,9 +200,27 @@ const handleCreateFlashSale = async () => {
         <!-- Flash Sale Form -->
         <form v-if="activeTab === 'flash_sale'" @submit.prevent="handleCreateFlashSale" class="space-y-6 max-w-2xl">
           <div class="space-y-2">
-            <label class="text-xs text-secondary uppercase tracking-widest">Target Product ID</label>
-            <input v-model.number="flashSaleForm.product_id" type="number" required class="w-full bg-black/50 border border-white/10 px-4 py-2 text-white focus:border-accent outline-none" />
-            <p class="text-xs text-tertiary">ID returned after creating a product.</p>
+            <div class="flex justify-between items-center">
+              <label class="text-xs text-secondary uppercase tracking-widest">Select Product</label>
+              <button type="button" @click="fetchProducts" class="text-xs text-accent hover:text-white flex items-center gap-1 transition-colors">
+                <RefreshCw class="w-3 h-3" /> Refresh List
+              </button>
+            </div>
+            <div class="relative">
+              <select
+                v-model.number="flashSaleForm.product_id"
+                required
+                class="w-full bg-black/50 border border-white/10 px-4 py-2 text-white focus:border-accent outline-none appearance-none cursor-pointer"
+              >
+                <option :value="0" disabled>Select a product...</option>
+                <option v-for="p in products" :key="p.id" :value="p.id">
+                  {{ p.name }} (ID: {{ p.id }}) - ¥{{ p.original_price }}
+                </option>
+              </select>
+              <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-secondary text-xs">
+                ▼
+              </div>
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-6">

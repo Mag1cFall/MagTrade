@@ -40,12 +40,23 @@ const BOX_SVG = `
   <rect x="90" y="90" width="20" height="20" fill="${COLORS.accent}"/>
 </svg>`
 
+export const getSvgByType = (type: string): string => {
+  let svg = BOX_SVG
+  switch (type) {
+    case 'phone': svg = PHONE_SVG; break;
+    case 'laptop': svg = LAPTOP_SVG; break;
+    case 'headphone': svg = HEADPHONE_SVG; break;
+    case 'box': default: svg = BOX_SVG; break;
+  }
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
+
 export const getSvgByProductName = (name: string): string => {
   const n = name.toLowerCase()
-  let svg = BOX_SVG
-  if (n.includes('phone') || n.includes('手机')) svg = PHONE_SVG
-  else if (n.includes('mac') || n.includes('laptop') || n.includes('电脑')) svg = LAPTOP_SVG
-  else if (n.includes('pod') || n.includes('headphone') || n.includes('耳机')) svg = HEADPHONE_SVG
+  let type = 'box'
+  if (n.includes('phone') || n.includes('手机')) type = 'phone'
+  else if (n.includes('mac') || n.includes('laptop') || n.includes('电脑')) type = 'laptop'
+  else if (n.includes('pod') || n.includes('headphone') || n.includes('耳机')) type = 'headphone'
   
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+  return getSvgByType(type)
 }
