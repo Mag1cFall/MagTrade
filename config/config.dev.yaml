@@ -1,0 +1,54 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  mode: "debug"
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "123"
+  dbname: "magtrade"
+  sslmode: "disable"
+  timezone: "Asia/Shanghai"
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: "1h"
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 100
+
+kafka:
+  brokers:
+    - "localhost:9092"
+  consumer_group: "magtrade-consumer"
+  topics:
+    flash_sale_orders: "flash-sale-orders"
+    order_status_change: "order-status-change"
+    ai_analysis_tasks: "ai-analysis-tasks"
+
+jwt:
+  secret: "your-super-secret-key-change-in-production"
+  access_token_expire: "2h"
+  refresh_token_expire: "168h"
+
+ai:
+  provider: "siliconflow"
+  base_url: "https://api.siliconflow.cn/v1"
+  api_key: "sk-qcamxswezcdfakicteasatcnkucqweuxjkzvfskwlhgudpda"
+  model: "deepseek-ai/DeepSeek-V3"
+  max_tokens: 2048
+  temperature: 0.7
+
+log:
+  level: "debug"
+  format: "json"
+  output: "stdout"
+
+rate_limit:
+  requests_per_second: 10000
+  burst: 20000

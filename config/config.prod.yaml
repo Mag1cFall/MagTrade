@@ -1,0 +1,55 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  mode: "release"
+
+database:
+  host: "${DB_HOST}"
+  port: 5432
+  user: "${DB_USER}"
+  password: "${DB_PASSWORD}"
+  dbname: "${DB_NAME}"
+  sslmode: "require"
+  timezone: "Asia/Shanghai"
+  max_idle_conns: 20
+  max_open_conns: 200
+  conn_max_lifetime: "1h"
+
+redis:
+  host: "${REDIS_HOST}"
+  port: 6379
+  password: "${REDIS_PASSWORD}"
+  db: 0
+  pool_size: 200
+
+kafka:
+  brokers:
+    - "${KAFKA_BROKER_1}"
+    - "${KAFKA_BROKER_2}"
+  consumer_group: "magtrade-consumer"
+  topics:
+    flash_sale_orders: "flash-sale-orders"
+    order_status_change: "order-status-change"
+    ai_analysis_tasks: "ai-analysis-tasks"
+
+jwt:
+  secret: "${JWT_SECRET}"
+  access_token_expire: "2h"
+  refresh_token_expire: "168h"
+
+ai:
+  provider: "siliconflow"
+  base_url: "https://api.siliconflow.cn/v1"
+  api_key: "${AI_API_KEY}"
+  model: "deepseek-ai/DeepSeek-V3"
+  max_tokens: 2048
+  temperature: 0.7
+
+log:
+  level: "info"
+  format: "json"
+  output: "stdout"
+
+rate_limit:
+  requests_per_second: 1000
+  burst: 2000
