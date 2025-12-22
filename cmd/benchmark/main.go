@@ -166,7 +166,7 @@ func makeRequest(client *http.Client, url string) Result {
 	}
 	defer resp.Body.Close()
 
-	io.Copy(io.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body)
 
 	return Result{
 		Success:  resp.StatusCode == http.StatusOK,

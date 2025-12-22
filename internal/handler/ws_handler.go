@@ -164,9 +164,9 @@ func (h *WSHandler) readPump(client *WSClient) {
 	}()
 
 	client.conn.SetReadLimit(512)
-	client.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	_ = client.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	client.conn.SetPongHandler(func(string) error {
-		client.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		_ = client.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		return nil
 	})
 
@@ -191,9 +191,9 @@ func (h *WSHandler) writePump(client *WSClient) {
 	for {
 		select {
 		case message, ok := <-client.send:
-			client.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			_ = client.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if !ok {
-				client.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = client.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
@@ -201,14 +201,14 @@ func (h *WSHandler) writePump(client *WSClient) {
 			if err != nil {
 				return
 			}
-			w.Write(message)
+			_, _ = w.Write(message)
 
 			if err := w.Close(); err != nil {
 				return
 			}
 
 		case <-ticker.C:
-			client.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			_ = client.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if err := client.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}

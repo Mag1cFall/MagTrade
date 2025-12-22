@@ -33,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 	log := logger.Get()
-	defer logger.Sync()
+	defer func() { _ = logger.Sync() }()
 
 	log.Info("starting MagTrade server",
 		zap.String("mode", cfg.Server.Mode),
