@@ -84,3 +84,7 @@ func (r *UserRepository) ExistsByEmail(ctx context.Context, email string) (bool,
 func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
 	return r.db.WithContext(ctx).Save(user).Error
 }
+
+func (r *UserRepository) UpdateEmailVerified(ctx context.Context, userID int64, verified bool) error {
+	return r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", userID).Update("email_verified", verified).Error
+}

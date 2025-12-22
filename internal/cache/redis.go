@@ -52,3 +52,7 @@ func Close() error {
 	}
 	return rdb.Close()
 }
+
+func GetClient() *redis.Client {
+	return Get()
+}

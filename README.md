@@ -123,6 +123,14 @@ docker-compose -f docker/docker-compose.yml logs -f app
 
 ## 📡 API 文档
 
+### 验证码与安全模块
+
+| 方法 | 路径 | 描述 | 认证 |
+|------|------|------|------|
+| GET | `/api/v1/captcha` | 获取验证码图片 | ❌ |
+| GET | `/api/v1/captcha/check` | 检查是否需要验证码 | ❌ |
+| GET | `/metrics` | 数据库连接池监控 | ❌ |
+
 ### 认证模块
 
 | 方法 | 路径 | 描述 | 认证 |

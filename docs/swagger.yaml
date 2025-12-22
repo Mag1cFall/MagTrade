@@ -23,7 +23,68 @@ tags:
   - name: AI
     description: AI Agent 相关接口
 
+  - name: Security
+    description: 验证码与安全
+  - name: Monitoring
+    description: 系统监控与指标
+
 paths:
+  /captcha:
+    get:
+      tags: [Security]
+      summary: 获取图形验证码
+      parameters:
+        - name: identifier
+          in: query
+          description: 用户标识（如IP）
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功返回图片内容
+          headers:
+            X-Captcha-ID:
+              schema:
+                type: string
+              description: 验证码ID
+
+  /captcha/check:
+    get:
+      tags: [Security]
+      summary: 检查是否需要验证码
+      parameters:
+        - name: identifier
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 状态信息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  needs_captcha:
+                    type: boolean
+                  is_locked:
+                    type: boolean
+
+  /metrics:
+    get:
+      tags: [Monitoring]
+      summary: 获取数据库连接池监控指标
+      responses:
+        '200':
+          description: 监控数据
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  database:
+                    type: object
+
   /auth/register:
     post:
       tags: [Auth]
@@ -628,3 +689,5 @@ components:
         paid_at:
           type: string
           format: date-time
+        email_verified:
+          type: boolean

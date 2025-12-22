@@ -35,6 +35,9 @@ func Setup(cfg *config.Config, producer *mq.Producer, wsHub *handler.WSHub, log 
 	aiHandler := handler.NewAIHandler(&cfg.AI, log)
 	wsHandler := handler.NewWSHandler(wsHub, &cfg.JWT, log)
 
+	captchaHandler := handler.NewCaptchaHandler()
+	metricsHandler := handler.NewMetricsHandler()
+
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"name":    "MagTrade API",
@@ -47,6 +50,8 @@ func Setup(cfg *config.Config, producer *mq.Producer, wsHub *handler.WSHub, log 
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+	r.GET("/metrics", metricsHandler.GetMetrics)
+
 	r.StaticFile("/swagger", "./docs/swagger.html")
 	r.StaticFile("/swagger.yaml", "./docs/swagger.yaml")
 
@@ -54,6 +59,9 @@ func Setup(cfg *config.Config, producer *mq.Producer, wsHub *handler.WSHub, log 
 
 	v1 := r.Group("/api/v1")
 	{
+		v1.GET("/captcha", captchaHandler.GetCaptcha)
+		v1.GET("/captcha/check", captchaHandler.CheckNeedsCaptcha)
+
 		auth := v1.Group("/auth")
 		{
 			auth.POST("/register", authHandler.Register)
