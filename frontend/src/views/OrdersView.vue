@@ -3,17 +3,23 @@ import { ref, onMounted } from 'vue'
 import { getOrders, payOrder, cancelOrder } from '@/api/order'
 import type { Order } from '@/types'
 import SmartImage from '@/components/SmartImage.vue'
-import { Loader2, Package, XCircle, CheckCircle, Clock, AlertCircle } from 'lucide-vue-next'
+import BaseModal from '@/components/BaseModal.vue'
+import { Loader2, Package, XCircle, CheckCircle, Clock, AlertCircle, CreditCard, Ban } from 'lucide-vue-next'
 
 const loading = ref(true)
 const orders = ref<Order[]>([])
 const total = ref(0)
 const actionLoading = ref<string | null>(null)
 
+const showPayModal = ref(false)
+const showCancelModal = ref(false)
+const selectedOrderNo = ref('')
+const modalMessage = ref('')
+
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await getOrders(1, 50) // Simple pagination for now
+    const res = await getOrders(1, 50)
     if (res.code === 0) {
       orders.value = res.data.orders
       total.value = res.data.total
@@ -25,37 +31,48 @@ const fetchData = async () => {
   }
 }
 
-const handlePay = async (orderNo: string) => {
-  if (!confirm('确认支付该订单吗？')) return
-  actionLoading.value = orderNo
+const openPayModal = (orderNo: string, amount: number) => {
+  selectedOrderNo.value = orderNo
+  modalMessage.value = `Confirm payment of ¥${amount.toFixed(2)} for order ${orderNo}?`
+  showPayModal.value = true
+}
+
+const openCancelModal = (orderNo: string) => {
+  selectedOrderNo.value = orderNo
+  modalMessage.value = `Are you sure you want to cancel order ${orderNo}? This action cannot be undone.`
+  showCancelModal.value = true
+}
+
+const confirmPay = async () => {
+  showPayModal.value = false
+  actionLoading.value = selectedOrderNo.value
   try {
-    const res = await payOrder(orderNo)
+    const res = await payOrder(selectedOrderNo.value)
     if (res.code === 0) {
-      // Update local state
-      const order = orders.value.find(o => o.order_no === orderNo)
+      const order = orders.value.find(o => o.order_no === selectedOrderNo.value)
       if (order) {
-        order.status = 1 // Paid
+        order.status = 1
         order.paid_at = new Date().toISOString()
       }
     }
   } catch (e) {
-    alert('支付失败')
+    console.error(e)
   } finally {
     actionLoading.value = null
   }
 }
 
-const handleCancel = async (orderNo: string) => {
-  if (!confirm('确认取消该订单吗？此操作不可恢复。')) return
-  actionLoading.value = orderNo
+const confirmCancel = async () => {
+  showCancelModal.value = false
+  actionLoading.value = selectedOrderNo.value
   try {
-    const res = await cancelOrder(orderNo)
+    const res = await cancelOrder(selectedOrderNo.value)
     if (res.code === 0) {
-      const order = orders.value.find(o => o.order_no === orderNo)
-      if (order) order.status = 2 // Cancelled
+      const order = orders.value.find(o => o.order_no === selectedOrderNo.value)
+      if (order) order.status = 2
     }
   } catch (e) {
-    alert('取消失败')
+    console.error(e)
   } finally {
     actionLoading.value = null
   }
@@ -88,7 +105,7 @@ onMounted(() => {
       <Loader2 class="w-8 h-8 text-accent animate-spin" />
     </div>
 
-    <div v-else-if="orders.length === 0" class="py-20 text-center border border-white/5 bg-surface/50">
+    <div v-else-if="orders.length === 0" class="py-20 text-center border border-dashed border-white/5 bg-surface/50 rounded-lg">
       <Package class="w-12 h-12 text-secondary mx-auto mb-4 opacity-50" />
       <p class="text-secondary text-lg font-mono">NO ORDERS FOUND_</p>
     </div>
@@ -97,63 +114,83 @@ onMounted(() => {
       <div 
         v-for="order in orders" 
         :key="order.id"
-        class="bg-surface border border-white/5 p-6 transition-all hover:border-white/10"
+        class="bg-surface border border-white/5 p-6 transition-all hover:border-white/20 group relative overflow-hidden"
       >
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <!-- Order Info -->
+        <div class="absolute top-0 left-0 w-1 h-full bg-white/5 group-hover:bg-accent transition-colors duration-300"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pl-4">
           <div class="flex-grow flex gap-6">
-            <!-- Smart Image Thumbnail -->
-            <div class="w-20 h-20 flex-shrink-0 bg-surface-light border border-white/5 rounded-sm overflow-hidden">
+            <div class="w-24 h-24 flex-shrink-0 bg-surface-light border border-white/5 overflow-hidden">
               <SmartImage
                 :src="order.flash_sale?.product?.image_url"
                 :alt="order.flash_sale?.product?.name || 'Product'"
-                class-name="w-full h-full object-cover"
+                class-name="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               />
             </div>
 
             <div>
               <div class="flex items-center gap-4 mb-2">
-                <span class="text-xs text-secondary font-mono tracking-widest">{{ order.order_no }}</span>
-                <span :class="['text-xs font-bold px-2 py-0.5 border flex items-center gap-1', getStatusConfig(order.status).color, `border-current`]">
+                <span class="text-xs text-tertiary font-mono tracking-widest">{{ order.order_no }}</span>
+                <span :class="['text-xs font-bold px-2 py-0.5 border flex items-center gap-1 uppercase tracking-wider', getStatusConfig(order.status).color, `border-current`]">
                   <component :is="getStatusConfig(order.status).icon" class="w-3 h-3" />
                   {{ getStatusConfig(order.status).label }}
                 </span>
               </div>
-              <h3 class="text-lg font-bold text-white mb-1">{{ order.flash_sale?.product?.name || 'Unknown Product' }}</h3>
-              <div class="text-sm text-secondary">
-                Quantity: <span class="text-white">{{ order.quantity }}</span> |
-                Time: <span class="text-white">{{ new Date(order.created_at).toLocaleString() }}</span>
+              <h3 class="text-xl font-bold text-white mb-2">{{ order.flash_sale?.product?.name || 'Unknown Product' }}</h3>
+              <div class="text-sm text-secondary flex gap-4">
+                <span>Quantity: <span class="text-white font-mono">{{ order.quantity }}</span></span>
+                <span class="text-tertiary">|</span>
+                <span>Time: <span class="text-white font-mono">{{ new Date(order.created_at).toLocaleString() }}</span></span>
               </div>
             </div>
           </div>
 
-          <!-- Price & Actions -->
           <div class="flex items-center gap-8 md:min-w-[300px] justify-between md:justify-end">
             <div class="text-right">
-              <div class="text-xs text-secondary mb-1">TOTAL AMOUNT</div>
-              <div class="text-xl font-mono font-bold text-white">¥{{ order.amount.toFixed(2) }}</div>
+              <div class="text-xs text-secondary mb-1 uppercase tracking-wider">Total Amount</div>
+              <div class="text-2xl font-mono font-bold text-white">¥{{ order.amount.toFixed(2) }}</div>
             </div>
 
             <div class="flex gap-3" v-if="order.status === 0">
               <button 
-                @click="handleCancel(order.order_no)"
-                :disabled="actionLoading === order.order_no"
-                class="px-4 py-2 border border-white/10 text-secondary text-sm font-bold hover:bg-white/5 transition-colors disabled:opacity-50"
+                @click="openCancelModal(order.order_no)"
+                :disabled="!!actionLoading"
+                class="p-3 border border-white/10 text-secondary hover:text-red-500 hover:border-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                title="Cancel Order"
               >
-                CANCEL
+                <Ban class="w-5 h-5" />
               </button>
               <button 
-                @click="handlePay(order.order_no)"
-                :disabled="actionLoading === order.order_no"
-                class="px-4 py-2 bg-white text-black text-sm font-bold hover:bg-gray-200 transition-colors disabled:opacity-50 flex items-center gap-2"
+                @click="openPayModal(order.order_no, order.amount)"
+                :disabled="!!actionLoading"
+                class="px-6 py-3 bg-white text-black text-sm font-bold hover:bg-accent hover:text-white transition-all duration-300 disabled:opacity-50 flex items-center gap-2 uppercase tracking-widest"
               >
                 <Loader2 v-if="actionLoading === order.order_no" class="w-4 h-4 animate-spin" />
-                <span v-else>PAY NOW</span>
+                <span v-else>Pay</span>
               </button>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <BaseModal
+      :show="showPayModal"
+      title="Confirm Payment"
+      :message="modalMessage"
+      confirm-text="Pay Now"
+      @confirm="confirmPay"
+      @cancel="showPayModal = false"
+    />
+
+    <BaseModal
+      :show="showCancelModal"
+      title="Cancel Order"
+      :message="modalMessage"
+      type="danger"
+      confirm-text="Yes, Cancel"
+      @confirm="confirmCancel"
+      @cancel="showCancelModal = false"
+    />
   </div>
 </template>

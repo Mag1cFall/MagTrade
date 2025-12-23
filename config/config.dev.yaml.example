@@ -7,13 +7,21 @@ database:
   host: "localhost"
   port: 5432
   user: "postgres"
-  password: "123"
+  password: "your_db_password"
   dbname: "magtrade"
   sslmode: "disable"
   timezone: "Asia/Shanghai"
   max_idle_conns: 10
   max_open_conns: 100
   conn_max_lifetime: "1h"
+
+email:
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 465
+  smtp_user: "your_email@gmail.com"
+  smtp_password: "your_app_password"
+  from_address: "your_email@gmail.com"
+  from_name: "MagTrade"
 
 redis:
   host: "localhost"
@@ -39,9 +47,9 @@ jwt:
 ai:
   provider: "siliconflow"
   base_url: "https://api.siliconflow.cn/v1"
-  api_key: "sk-qcamxswezcdfakicteasatcnkucqweuxjkzvfskwlhgudpda"
-  model: "deepseek-ai/DeepSeek-V3"
-  max_tokens: 2048
+  api_key: "your_api_key"
+  model: "deepseek-ai/DeepSeek-V3.2"
+  max_tokens: 8192
   temperature: 0.7
 
 log:

@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/Mag1cFall/magtrade/internal/config"
@@ -48,6 +51,47 @@ func (h *AIHandler) Chat(c *gin.Context) {
 	}
 
 	response.Success(c, result)
+}
+
+func (h *AIHandler) ChatStream(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		c.JSON(401, gin.H{"error": "authentication required"})
+		return
+	}
+
+	var req ai.ChatRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("X-Accel-Buffering", "no")
+
+	flusher, ok := c.Writer.(http.Flusher)
+	if !ok {
+		c.JSON(500, gin.H{"error": "streaming not supported"})
+		return
+	}
+
+	err := h.customerService.ChatStream(c.Request.Context(), userID, &req, func(chunk ai.StreamChunk) error {
+		data, _ := json.Marshal(chunk)
+		_, err := fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+		if err != nil {
+			return err
+		}
+		flusher.Flush()
+		return nil
+	})
+
+	if err != nil {
+		h.log.Error("chat stream error", zap.Error(err))
+		fmt.Fprintf(c.Writer, "data: {\"type\":\"error\",\"content\":\"%s\"}\n\n", "AI服务暂时不可用")
+		flusher.Flush()
+	}
 }
 
 func (h *AIHandler) GetChatHistory(c *gin.Context) {

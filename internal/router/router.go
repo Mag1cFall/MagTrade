@@ -27,7 +27,7 @@ func Setup(cfg *config.Config, producer *mq.Producer, wsHub *handler.WSHub, log 
 	ipLimiter := middleware.NewIPRateLimiter(&cfg.RateLimit)
 	r.Use(middleware.RateLimit(ipLimiter))
 
-	authHandler := handler.NewAuthHandler(&cfg.JWT)
+	authHandler := handler.NewAuthHandler(&cfg.JWT, &cfg.Email)
 	productHandler := handler.NewProductHandler()
 	anomalyDetector := ai.NewAnomalyDetector(log)
 	flashSaleHandler := handler.NewFlashSaleHandler(producer, anomalyDetector, log)
@@ -64,6 +64,7 @@ func Setup(cfg *config.Config, producer *mq.Producer, wsHub *handler.WSHub, log 
 
 		auth := v1.Group("/auth")
 		{
+			auth.POST("/send-code", authHandler.SendEmailCode)
 			auth.POST("/register", authHandler.Register)
 			auth.POST("/login", authHandler.Login)
 			auth.POST("/refresh", authHandler.Refresh)
@@ -103,6 +104,7 @@ func Setup(cfg *config.Config, producer *mq.Producer, wsHub *handler.WSHub, log 
 		aiGroup.Use(middleware.Auth(&cfg.JWT))
 		{
 			aiGroup.POST("/chat", aiHandler.Chat)
+			aiGroup.POST("/chat/stream", aiHandler.ChatStream)
 			aiGroup.GET("/chat/history", aiHandler.GetChatHistory)
 			aiGroup.DELETE("/chat/history", aiHandler.ClearChatHistory)
 			aiGroup.GET("/recommendations/:flash_sale_id", aiHandler.GetRecommendation)

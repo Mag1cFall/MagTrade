@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/Mag1cFall/magtrade/internal/cache"
 	"github.com/Mag1cFall/magtrade/internal/config"
 	"github.com/Mag1cFall/magtrade/internal/pkg/response"
 	"github.com/Mag1cFall/magtrade/internal/pkg/utils"
@@ -9,15 +10,40 @@ import (
 )
 
 type AuthHandler struct {
-	authService *service.AuthService
-	jwtCfg      *config.JWTConfig
+	authService    *service.AuthService
+	captchaService *service.CaptchaService
+	jwtCfg         *config.JWTConfig
 }
 
-func NewAuthHandler(jwtCfg *config.JWTConfig) *AuthHandler {
+func NewAuthHandler(jwtCfg *config.JWTConfig, emailCfg *config.EmailConfig) *AuthHandler {
+	rdb := cache.GetClient()
+	captchaSvc := service.NewCaptchaService(rdb)
+	emailSvc := service.NewEmailService(rdb, emailCfg)
+
 	return &AuthHandler{
-		authService: service.NewAuthService(jwtCfg),
-		jwtCfg:      jwtCfg,
+		authService:    service.NewAuthService(jwtCfg, captchaSvc, emailSvc),
+		captchaService: captchaSvc,
+		jwtCfg:         jwtCfg,
 	}
+}
+
+func (h *AuthHandler) SendEmailCode(c *gin.Context) {
+	var req service.SendCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	if err := h.authService.SendEmailCode(c.Request.Context(), req.Email); err != nil {
+		if err == service.ErrEmailCodeTooFrequent {
+			response.BadRequest(c, "请60秒后再试")
+			return
+		}
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	response.Success(c, gin.H{"message": "验证码已发送"})
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
@@ -29,6 +55,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	result, err := h.authService.Register(c.Request.Context(), &req)
 	if err != nil {
+		if err == service.ErrInvalidEmailCode {
+			response.BadRequest(c, "验证码错误或已过期")
+			return
+		}
 		response.BadRequest(c, err.Error())
 		return
 	}
@@ -45,16 +75,28 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	result, err := h.authService.Login(c.Request.Context(), &req)
 	if err != nil {
-		if err == service.ErrInvalidCredentials {
-			response.Unauthorized(c, "用户名或密码错误")
+		switch err {
+		case service.ErrInvalidCredentials:
+			identifier := req.Username
+			needsCaptcha := h.captchaService.NeedsCaptcha(c.Request.Context(), identifier)
+			response.Unauthorized(c, "用户名或密码错误", gin.H{"needs_captcha": needsCaptcha})
 			return
-		}
-		if err == service.ErrUserDisabled {
+		case service.ErrUserDisabled:
 			response.Forbidden(c, "账号已被禁用")
 			return
+		case service.ErrAccountLocked:
+			response.Forbidden(c, "账号已被锁定，请15分钟后再试")
+			return
+		case service.ErrCaptchaRequired:
+			response.BadRequest(c, "请输入验证码")
+			return
+		case service.ErrInvalidCaptcha:
+			response.BadRequest(c, "验证码错误")
+			return
+		default:
+			response.InternalError(c, err.Error())
+			return
 		}
-		response.InternalError(c, err.Error())
-		return
 	}
 
 	response.Success(c, result)

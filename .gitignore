@@ -17,6 +17,9 @@
 .env.local
 .env.*.local
 
+# Local config with secrets (use config.dev.yaml.example as template)
+config/config.dev.yaml
+
 coverage.out
 coverage.html
 

@@ -85,17 +85,52 @@ paths:
                   database:
                     type: object
 
-  /auth/register:
+  /auth/send-code:
     post:
       tags: [Auth]
-      summary: 用户注册
+      summary: 发送邮箱验证码
+      description: 发送6位验证码到邮箱，60秒内不可重发，验证码15分钟有效
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [username, email, password]
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: 验证码发送成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+        '400':
+          description: 请60秒后再试 / 邮箱已注册
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: 用户注册
+      description: 需要先调用 /auth/send-code 获取邮箱验证码
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password, email_code]
               properties:
                 username:
                   type: string
@@ -107,6 +142,11 @@ paths:
                 password:
                   type: string
                   minLength: 6
+                email_code:
+                  type: string
+                  minLength: 6
+                  maxLength: 6
+                  description: 邮箱验证码
       responses:
         '200':
           description: 注册成功
@@ -114,11 +154,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: 验证码错误或已过期 / 用户名或邮箱已存在
 
   /auth/login:
     post:
       tags: [Auth]
       summary: 用户登录
+      description: 失败3次需验证码，失败5次锁定15分钟
       requestBody:
         required: true
         content:
@@ -131,6 +174,12 @@ paths:
                   type: string
                 password:
                   type: string
+                captcha_id:
+                  type: string
+                  description: 验证码ID（失败3次后需要）
+                captcha_code:
+                  type: string
+                  description: 验证码（失败3次后需要）
       responses:
         '200':
           description: 登录成功
@@ -140,6 +189,22 @@ paths:
                 $ref: '#/components/schemas/TokenResponse'
         '401':
           description: 用户名或密码错误
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      needs_captcha:
+                        type: boolean
+        '403':
+          description: 账号已被锁定或禁用
 
   /auth/refresh:
     post:

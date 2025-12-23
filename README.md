@@ -135,8 +135,9 @@ docker-compose -f docker/docker-compose.yml logs -f app
 
 | 方法 | 路径 | 描述 | 认证 |
 |------|------|------|------|
-| POST | `/api/v1/auth/register` | 用户注册 | ❌ |
-| POST | `/api/v1/auth/login` | 用户登录 | ❌ |
+| POST | `/api/v1/auth/send-code` | 发送邮箱验证码（60秒冷却，15分钟有效） | ❌ |
+| POST | `/api/v1/auth/register` | 用户注册（需邮箱验证码） | ❌ |
+| POST | `/api/v1/auth/login` | 用户登录（失败3次需验证码，5次锁定15分钟） | ❌ |
 | POST | `/api/v1/auth/refresh` | 刷新Token | ✅ |
 | GET | `/api/v1/auth/me` | 获取当前用户 | ✅ |
 

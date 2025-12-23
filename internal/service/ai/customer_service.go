@@ -104,6 +104,62 @@ func (s *CustomerService) Chat(ctx context.Context, userID int64, req *ChatReque
 	}, nil
 }
 
+func (s *CustomerService) ChatStream(ctx context.Context, userID int64, req *ChatRequest, chunkHandler func(chunk StreamChunk) error) error {
+	history, err := s.chatRepo.GetBySession(ctx, userID, req.SessionID, 10)
+	if err != nil {
+		s.log.Error("failed to get chat history", zap.Error(err))
+	}
+
+	contextInfo, _ := s.gatherContext(ctx, userID, req.Message)
+
+	enhancedSystemPrompt := customerServiceSystemPrompt
+	if contextInfo != "" {
+		enhancedSystemPrompt += "\n\n当前上下文信息：\n" + contextInfo
+	}
+
+	var chatHistory []ChatMessage
+	for _, h := range history {
+		chatHistory = append(chatHistory, ChatMessage{
+			Role:    string(h.Role),
+			Content: h.Content,
+		})
+	}
+
+	userChat := &model.ChatHistory{
+		UserID:    userID,
+		SessionID: req.SessionID,
+		Role:      model.ChatRoleUser,
+		Content:   req.Message,
+	}
+	if err := s.chatRepo.Create(ctx, userChat); err != nil {
+		s.log.Error("failed to save user message", zap.Error(err))
+	}
+
+	var fullResponse string
+	err = s.llm.ChatStreamWithHistory(ctx, enhancedSystemPrompt, chatHistory, req.Message, func(chunk StreamChunk) error {
+		if chunk.Type == "content" {
+			fullResponse += chunk.Content
+		}
+		return chunkHandler(chunk)
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to get LLM response: %w", err)
+	}
+
+	assistantChat := &model.ChatHistory{
+		UserID:    userID,
+		SessionID: req.SessionID,
+		Role:      model.ChatRoleAssistant,
+		Content:   fullResponse,
+	}
+	if err := s.chatRepo.Create(ctx, assistantChat); err != nil {
+		s.log.Error("failed to save assistant message", zap.Error(err))
+	}
+
+	return nil
+}
+
 func (s *CustomerService) gatherContext(ctx context.Context, userID int64, message string) (string, map[string]interface{}) {
 	var contextParts []string
 	relatedData := make(map[string]interface{})

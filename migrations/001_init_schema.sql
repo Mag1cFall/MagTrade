@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) DEFAULT 'user',
     status SMALLINT DEFAULT 1,
+    email_verified BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
@@ -98,10 +99,10 @@ CREATE TABLE IF NOT EXISTS ai_recommendations (
 CREATE INDEX idx_ai_recommendations_flash_sale_id ON ai_recommendations(flash_sale_id);
 CREATE INDEX idx_ai_recommendations_type ON ai_recommendations(recommendation_type);
 
-INSERT INTO users (username, email, password_hash, role, status) VALUES
-('admin', 'admin@magtrade.com', '$2a$10$N9qo8uLOickgx2ZMRZoMye/x3ZTkUjkq6b3FVVWmkWCRKwdvz3wAe', 'admin', 1);
+INSERT INTO users (username, email, password_hash, role, status, email_verified) VALUES
+('admin', 'admin@magtrade.com', '$2a$10$N9qo8uLOickgx2ZMRZoMye/x3ZTkUjkq6b3FVVWmkWCRKwdvz3wAe', 'admin', 1, true);
 
 INSERT INTO products (name, description, original_price, image_url, status) VALUES
-('iPhone 15 Pro Max 256GB', '全新苹果iPhone 15 Pro Max，256GB存储，钛金属设计', 9999.00, 'https://example.com/iphone15.jpg', 1),
-('MacBook Pro 14寸 M3 Pro', '苹果MacBook Pro 14寸，M3 Pro芯片，18GB内存，512GB SSD', 16999.00, 'https://example.com/macbook.jpg', 1),
-('AirPods Pro 2', '苹果AirPods Pro第二代，自适应降噪，空间音频', 1899.00, 'https://example.com/airpods.jpg', 1);
+('iPhone 15 Pro Max 256GB', 'Apple iPhone 15 Pro Max, 256GB, Titanium Design', 9999.00, 'https://example.com/iphone15.jpg', 1),
+('MacBook Pro 14 M3 Pro', 'Apple MacBook Pro 14, M3 Pro chip, 18GB RAM, 512GB SSD', 16999.00, 'https://example.com/macbook.jpg', 1),
+('AirPods Pro 2', 'Apple AirPods Pro 2nd Gen, Active Noise Cancellation', 1899.00, 'https://example.com/airpods.jpg', 1);

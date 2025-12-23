@@ -78,8 +78,15 @@ func BadRequest(c *gin.Context, message string) {
 	Error(c, http.StatusBadRequest, CodeBadRequest, message)
 }
 
-func Unauthorized(c *gin.Context, message string) {
-	Error(c, http.StatusUnauthorized, CodeUnauthorized, message)
+func Unauthorized(c *gin.Context, message string, data ...interface{}) {
+	resp := Response{
+		Code:    CodeUnauthorized,
+		Message: message,
+	}
+	if len(data) > 0 {
+		resp.Data = data[0]
+	}
+	c.JSON(http.StatusUnauthorized, resp)
 }
 
 func Forbidden(c *gin.Context, message string) {

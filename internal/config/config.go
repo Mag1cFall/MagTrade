@@ -18,6 +18,7 @@ type Config struct {
 	AI        AIConfig        `mapstructure:"ai"`
 	Log       LogConfig       `mapstructure:"log"`
 	RateLimit RateLimitConfig `mapstructure:"rate_limit"`
+	Email     EmailConfig     `mapstructure:"email"`
 }
 
 type ServerConfig struct {
@@ -94,6 +95,15 @@ type LogConfig struct {
 type RateLimitConfig struct {
 	RequestsPerSecond int `mapstructure:"requests_per_second"`
 	Burst             int `mapstructure:"burst"`
+}
+
+type EmailConfig struct {
+	SMTPHost     string `mapstructure:"smtp_host"`
+	SMTPPort     int    `mapstructure:"smtp_port"`
+	SMTPUser     string `mapstructure:"smtp_user"`
+	SMTPPassword string `mapstructure:"smtp_password"`
+	FromAddress  string `mapstructure:"from_address"`
+	FromName     string `mapstructure:"from_name"`
 }
 
 var cfg *Config

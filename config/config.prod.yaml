@@ -41,8 +41,8 @@ ai:
   provider: "siliconflow"
   base_url: "https://api.siliconflow.cn/v1"
   api_key: "${AI_API_KEY}"
-  model: "deepseek-ai/DeepSeek-V3"
-  max_tokens: 2048
+  model: "deepseek-ai/DeepSeek-V3.2"
+  max_tokens: 8192
   temperature: 0.7
 
 log:

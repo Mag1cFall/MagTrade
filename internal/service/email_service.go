@@ -3,95 +3,94 @@ package service
 import (
 	"context"
 	"crypto/rand"
-	"encoding/hex"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/smtp"
 	"time"
 
 	"github.com/Mag1cFall/magtrade/internal/config"
-	"github.com/Mag1cFall/magtrade/internal/repository"
 	"github.com/redis/go-redis/v9"
 )
 
 var (
-	ErrEmailNotVerified = errors.New("email not verified")
-	ErrInvalidToken     = errors.New("invalid or expired token")
+	ErrEmailCodeTooFrequent = errors.New("please wait before requesting a new code")
+	ErrInvalidEmailCode     = errors.New("invalid or expired verification code")
 )
 
-type EmailConfig struct {
-	SMTPHost     string
-	SMTPPort     int
-	SMTPUser     string
-	SMTPPassword string
-	FromAddress  string
-	FromName     string
-}
-
 type EmailService struct {
-	redis    *redis.Client
-	userRepo *repository.UserRepository
-	cfg      *EmailConfig
+	redis *redis.Client
+	cfg   *config.EmailConfig
 }
 
-func NewEmailService(rdb *redis.Client, cfg *EmailConfig) *EmailService {
+func NewEmailService(rdb *redis.Client, cfg *config.EmailConfig) *EmailService {
 	return &EmailService{
-		redis:    rdb,
-		userRepo: repository.NewUserRepository(),
-		cfg:      cfg,
+		redis: rdb,
+		cfg:   cfg,
 	}
 }
 
-func (s *EmailService) SendVerificationEmail(ctx context.Context, userID int64, email string) error {
-	token := s.generateToken()
-	key := fmt.Sprintf("email_verify:%s", token)
+func (s *EmailService) SendEmailCode(ctx context.Context, email string) error {
+	cooldownKey := fmt.Sprintf("email_code_cooldown:%s", email)
+	exists, _ := s.redis.Exists(ctx, cooldownKey).Result()
+	if exists > 0 {
+		return ErrEmailCodeTooFrequent
+	}
 
-	data := fmt.Sprintf("%d:%s", userID, email)
-	if err := s.redis.Set(ctx, key, data, 24*time.Hour).Err(); err != nil {
+	code := s.generateCode(6)
+	codeKey := fmt.Sprintf("email_code:%s", email)
+
+	if err := s.redis.Set(ctx, codeKey, code, 15*time.Minute).Err(); err != nil {
+		return err
+	}
+
+	if err := s.redis.Set(ctx, cooldownKey, "1", 60*time.Second).Err(); err != nil {
 		return err
 	}
 
 	if s.cfg == nil || s.cfg.SMTPHost == "" {
+		fmt.Printf("[DEV MODE] Email verification code for %s: %s\n", email, code)
 		return nil
 	}
 
-	subject := "验证您的邮箱 - MagTrade"
+	subject := "您的验证码 - MagTrade"
 	body := fmt.Sprintf(`
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
-<body>
-<h2>欢迎注册 MagTrade</h2>
-<p>请点击下方链接验证您的邮箱：</p>
-<p><a href="http://localhost:8080/api/v1/auth/verify-email?token=%s">验证邮箱</a></p>
-<p>链接24小时内有效。</p>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+<div style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); padding: 30px; border-radius: 10px; text-align: center;">
+<h1 style="color: white; margin: 0;">MagTrade</h1>
+<p style="color: rgba(255,255,255,0.9); margin-top: 10px;">高并发分布式秒杀系统</p>
+</div>
+<div style="padding: 30px 0;">
+<p>您好，</p>
+<p>您正在注册 MagTrade 账号，验证码为：</p>
+<div style="background: #f5f5f5; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+<span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #667eea;">%s</span>
+</div>
+<p>验证码 <strong>15分钟</strong> 内有效，请勿泄露给他人。</p>
+<p style="color: #999; font-size: 12px; margin-top: 30px;">如果这不是您的操作，请忽略此邮件。</p>
+</div>
 </body>
 </html>
-`, token)
+`, code)
 
 	return s.sendEmail(email, subject, body)
 }
 
-func (s *EmailService) VerifyEmail(ctx context.Context, token string) error {
-	key := fmt.Sprintf("email_verify:%s", token)
-	data, err := s.redis.Get(ctx, key).Result()
+func (s *EmailService) VerifyEmailCode(ctx context.Context, email, code string) bool {
+	codeKey := fmt.Sprintf("email_code:%s", email)
+	stored, err := s.redis.Get(ctx, codeKey).Result()
 	if err != nil {
-		return ErrInvalidToken
+		return false
 	}
 
-	var userID int64
-	var email string
-	_, err = fmt.Sscanf(data, "%d:%s", &userID, &email)
-	if err != nil {
-		return ErrInvalidToken
+	if stored == code {
+		_ = s.redis.Del(ctx, codeKey)
+		return true
 	}
-
-	if err := s.userRepo.UpdateEmailVerified(ctx, userID, true); err != nil {
-		return err
-	}
-
-	_ = s.redis.Del(ctx, key)
-	return nil
+	return false
 }
 
 func (s *EmailService) sendEmail(to, subject, body string) error {
@@ -108,18 +107,61 @@ func (s *EmailService) sendEmail(to, subject, body string) error {
 		"\r\n"+
 		"%s", s.cfg.FromName, from, to, subject, body)
 
-	auth := smtp.PlainAuth("", s.cfg.SMTPUser, s.cfg.SMTPPassword, s.cfg.SMTPHost)
 	addr := fmt.Sprintf("%s:%d", s.cfg.SMTPHost, s.cfg.SMTPPort)
 
-	return smtp.SendMail(addr, auth, from, []string{to}, []byte(msg))
+	tlsConfig := &tls.Config{
+		ServerName: s.cfg.SMTPHost,
+	}
+
+	conn, err := tls.Dial("tcp", addr, tlsConfig)
+	if err != nil {
+		return fmt.Errorf("failed to connect to SMTP server: %w", err)
+	}
+	defer conn.Close()
+
+	client, err := smtp.NewClient(conn, s.cfg.SMTPHost)
+	if err != nil {
+		return fmt.Errorf("failed to create SMTP client: %w", err)
+	}
+	defer client.Close()
+
+	auth := smtp.PlainAuth("", s.cfg.SMTPUser, s.cfg.SMTPPassword, s.cfg.SMTPHost)
+	if err := client.Auth(auth); err != nil {
+		return fmt.Errorf("SMTP auth failed: %w", err)
+	}
+
+	if err := client.Mail(from); err != nil {
+		return fmt.Errorf("SMTP MAIL command failed: %w", err)
+	}
+
+	if err := client.Rcpt(to); err != nil {
+		return fmt.Errorf("SMTP RCPT command failed: %w", err)
+	}
+
+	w, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("SMTP DATA command failed: %w", err)
+	}
+
+	_, err = w.Write([]byte(msg))
+	if err != nil {
+		return fmt.Errorf("failed to write email body: %w", err)
+	}
+
+	err = w.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close email writer: %w", err)
+	}
+
+	return client.Quit()
 }
 
-func (s *EmailService) generateToken() string {
-	b := make([]byte, 32)
+func (s *EmailService) generateCode(length int) string {
+	const digits = "0123456789"
+	b := make([]byte, length)
 	_, _ = rand.Read(b)
-	return hex.EncodeToString(b)
-}
-
-func LoadEmailConfig(cfg *config.Config) *EmailConfig {
-	return nil
+	for i := range b {
+		b[i] = digits[int(b[i])%len(digits)]
+	}
+	return string(b)
 }
