@@ -23,9 +23,9 @@ onUnmounted(() => {
 })
 
 const navClasses = computed(() => {
-  return `fixed top-0 w-full z-50 transition-all duration-500 ease-out border-b ${
-    isScrolled.value 
-      ? 'bg-background/80 backdrop-blur-xl border-white/5 py-4' 
+  return `absolute top-0 w-full z-50 transition-all duration-500 ease-out border-b ${
+    isScrolled.value
+      ? 'fixed bg-background/80 backdrop-blur-xl border-white/5 py-4'
       : 'bg-transparent border-transparent py-6'
   }`
 })
@@ -105,7 +105,7 @@ const toggleMobileMenu = () => {
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-grow pt-24 px-6 md:px-12 container mx-auto">
+    <main class="flex-grow">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -120,9 +120,9 @@ const toggleMobileMenu = () => {
           © 2025 MagTrade Inc. All rights reserved.
         </div>
         <div class="flex gap-6 text-secondary text-sm">
-          <a href="#" class="hover:text-white transition-colors">Privacy</a>
-          <a href="#" class="hover:text-white transition-colors">Terms</a>
-          <a href="#" class="hover:text-white transition-colors">Support</a>
+          <RouterLink to="/privacy" class="hover:text-white transition-colors">Privacy</RouterLink>
+          <RouterLink to="/terms" class="hover:text-white transition-colors">Terms</RouterLink>
+          <RouterLink to="/contact" class="hover:text-white transition-colors">Support</RouterLink>
         </div>
       </div>
     </footer>

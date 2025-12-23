@@ -1,10 +1,11 @@
 <template>
   <div class="relative w-full h-[400px] md:h-[600px] overflow-hidden bg-[#050505] flex items-center justify-center border border-white/5 rounded-xl group">
-    <!-- Grid Background -->
+    <!-- Grid Background & Image -->
+    <img src="/world-map.png" alt="World Map" class="absolute inset-0 w-full h-full object-cover opacity-30 select-none pointer-events-none" />
     <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_80%)]"></div>
 
     <!-- Map Dots -->
-    <svg viewBox="0 0 800 400" class="w-full h-full opacity-60">
+    <svg viewBox="0 0 800 400" class="w-full h-full opacity-60 relative z-10">
       <g v-for="(dot, i) in dots" :key="i" :transform="`translate(${dot.x}, ${dot.y})`">
         <circle r="1.5" fill="#333" />
       </g>
@@ -28,14 +29,14 @@
     </svg>
 
     <!-- Overlay UI -->
-    <div class="absolute bottom-8 left-8 flex flex-col gap-2">
+    <div class="absolute bottom-8 left-8 flex flex-col gap-2 z-20">
       <div class="flex items-center gap-2">
         <span class="w-2 h-2 bg-accent rounded-full animate-ping"></span>
-        <span class="text-xs font-mono text-accent uppercase tracking-widest">Live Network Status</span>
+        <span class="text-xs font-mono text-accent uppercase tracking-widest">实时网络状态</span>
       </div>
-      <div class="text-3xl font-bold text-white tracking-tighter">GLOBAL <span class="text-secondary">NODES</span></div>
+      <div class="text-3xl font-bold text-white tracking-tighter">全球 <span class="text-secondary">节点</span></div>
       <div class="text-sm text-secondary font-mono">
-        Active Regions: <span class="text-white">14</span> | Latency: <span class="text-accent">< 35ms</span>
+        活跃区域: <span class="text-white">14</span> | 延迟: <span class="text-accent">< 35ms</span>
       </div>
     </div>
   </div>

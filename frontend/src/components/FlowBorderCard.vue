@@ -1,88 +1,66 @@
 <template>
-  <div class="flow-border-wrapper" :style="wrapperStyle">
-    <div class="flow-border-content">
+  <div 
+    class="flow-border-card" 
+    :style="{
+      '--border-color': color || '#e33535',
+      '--border-width': borderWidth || '1px',
+      '--border-radius': borderRadius || '0px'
+    }"
+  >
+    <div class="content">
       <slot></slot>
     </div>
+    
+    <div class="border-gradient" v-if="active"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-
-interface Props {
+defineProps<{
   color?: string;
+  active?: boolean;
   borderWidth?: string;
   borderRadius?: string;
-  duration?: number;
-  active?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  color: '#e33535',
-  borderWidth: '1px',
-  borderRadius: '0px',
-  duration: 4,
-  active: true
-});
-
-const wrapperStyle = computed(() => ({
-  '--border-color': props.color,
-  '--border-width': props.borderWidth,
-  '--border-radius': props.borderRadius,
-  '--animation-duration': `${props.duration}s`,
-  '--opacity': props.active ? 1 : 0
-}));
+}>();
 </script>
 
 <style scoped>
-.flow-border-wrapper {
+.flow-border-card {
   position: relative;
-  padding: var(--border-width);
+  background: var(--bg-color, #0a0a0a);
   border-radius: var(--border-radius);
+  padding: var(--border-width); /* Space for the border */
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.02);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
-.flow-border-wrapper::before {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0%,
-    transparent 40%,
-    var(--border-color) 50%,
-    transparent 60%,
-    transparent 100%
-  );
-  animation: rotate-border var(--animation-duration) linear infinite;
-  opacity: var(--opacity);
-  transition: opacity 0.3s ease;
-}
-
-.flow-border-content {
+.content {
   position: relative;
-  z-index: 1;
-  background: #050505;
+  z-index: 2;
+  height: 100%;
+  background: inherit;
   border-radius: calc(var(--border-radius) - var(--border-width));
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 
-@keyframes rotate-border {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.border-gradient {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  aspect-ratio: 1;
+  background: conic-gradient(
+    transparent 0deg, 
+    transparent 80deg, 
+    var(--border-color) 120deg, 
+    transparent 180deg,
+    transparent 360deg
+  );
+  transform: translate(-50%, -50%);
+  animation: rotate 4s linear infinite;
+  z-index: 1;
+}
+
+@keyframes rotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 </style>

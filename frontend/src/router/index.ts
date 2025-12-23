@@ -14,6 +14,11 @@ const router = createRouter({
           component: () => import('@/views/HomeView.vue'),
         },
         {
+          path: 'shop',
+          name: 'shop',
+          component: () => import('@/views/ShopView.vue'),
+        },
+        {
           path: 'flash-sales/:id',
           name: 'flash-sale-detail',
           component: () => import('@/views/FlashSaleDetailView.vue'),
@@ -29,6 +34,21 @@ const router = createRouter({
           name: 'admin',
           component: () => import('@/views/AdminView.vue'),
           meta: { requiresAuth: true }
+        },
+        {
+          path: 'privacy',
+          name: 'privacy',
+          component: () => import('@/views/PrivacyView.vue'),
+        },
+        {
+          path: 'terms',
+          name: 'terms',
+          component: () => import('@/views/TermsView.vue'),
+        },
+        {
+          path: 'contact',
+          name: 'contact',
+          component: () => import('@/views/ContactView.vue'),
         }
       ]
     },
@@ -64,7 +84,7 @@ const router = createRouter({
 
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
-  
+
   // 尝试获取用户信息（如果只存在 Token）
   if (authStore.isAuthenticated && !authStore.user) {
     await authStore.fetchUser()
