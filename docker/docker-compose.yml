@@ -1,23 +1,21 @@
-version: '3.8'
-
 services:
-  app:
+  backend:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    container_name: magtrade-app
+    container_name: mt-backend
     ports:
       - "8080:8080"
     environment:
       - APP_ENV=prod
       - DB_HOST=postgres
       - DB_USER=postgres
-      - DB_PASSWORD=123
+      - DB_PASSWORD=${DB_PASSWORD:-123}
       - DB_NAME=magtrade
       - REDIS_HOST=redis
       - REDIS_PASSWORD=
       - KAFKA_BROKER_1=kafka:9092
-      - JWT_SECRET=your-production-secret-key-change-me
+      - JWT_SECRET=${JWT_SECRET:-your-production-secret-change-me}
       - AI_API_KEY=${AI_API_KEY}
     depends_on:
       postgres:
@@ -27,91 +25,104 @@ services:
       kafka:
         condition: service_healthy
     networks:
-      - magtrade-network
-    restart: unless-stopped
+      - mt-network
+    restart: always
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: mt-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - mt-network
+    restart: always
 
   postgres:
     image: postgres:16-alpine
-    container_name: magtrade-postgres
+    container_name: mt-postgres
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=123
-      - POSTGRES_DB=magtrade
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ../migrations:/docker-entrypoint-initdb.d
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-123}
+      POSTGRES_DB: magtrade
     ports:
       - "5432:5432"
+    volumes:
+      - mt_postgres_data:/var/lib/postgresql/data
     networks:
-      - magtrade-network
+      - mt-network
+    restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d magtrade"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d magtrade" ]
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    container_name: magtrade-redis
+    container_name: mt-redis
     command: redis-server --appendonly yes
     volumes:
-      - redis_data:/data
-    ports:
-      - "6379:6379"
+      - mt_redis_data:/data
     networks:
-      - magtrade-network
+      - mt-network
+    restart: always
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
-    container_name: magtrade-zookeeper
+    container_name: mt-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     volumes:
-      - zookeeper_data:/var/lib/zookeeper/data
+      - mt_zookeeper_data:/var/lib/zookeeper/data
     networks:
-      - magtrade-network
-    restart: unless-stopped
+      - mt-network
+    restart: always
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
-    container_name: magtrade-kafka
+    container_name: mt-kafka
     depends_on:
       - zookeeper
-    ports:
-      - "9092:9092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     volumes:
-      - kafka_data:/var/lib/kafka/data
+      - mt_kafka_data:/var/lib/kafka/data
     networks:
-      - magtrade-network
+      - mt-network
+    restart: always
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
       interval: 30s
       timeout: 10s
       retries: 5
-    restart: unless-stopped
 
 networks:
-  magtrade-network:
+  mt-network:
     driver: bridge
 
 volumes:
-  postgres_data:
-  redis_data:
-  zookeeper_data:
-  kafka_data:
+  mt_postgres_data:
+  mt_redis_data:
+  mt_zookeeper_data:
+  mt_kafka_data:

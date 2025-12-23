@@ -3,7 +3,7 @@
     <div class="sidebar__line"></div>
     <ul class="sidebar__pagers">
       <li 
-        v-for="(item, index) in sections" 
+        v-for="(_item, index) in sections" 
         :key="index"
         :class="['sidebar__num', { 'sidebar__num--active': activeIndex === index }]"
         @click="$emit('change', index)"

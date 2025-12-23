@@ -150,17 +150,52 @@ func Get() *Config {
 }
 
 func expandEnvVars(c *Config) {
-	c.Database.Host = expandEnv(c.Database.Host)
-	c.Database.User = expandEnv(c.Database.User)
-	c.Database.Password = expandEnv(c.Database.Password)
-	c.Database.DBName = expandEnv(c.Database.DBName)
-	c.Redis.Host = expandEnv(c.Redis.Host)
-	c.Redis.Password = expandEnv(c.Redis.Password)
-	c.JWT.Secret = expandEnv(c.JWT.Secret)
-	c.AI.APIKey = expandEnv(c.AI.APIKey)
-
-	for i, broker := range c.Kafka.Brokers {
-		c.Kafka.Brokers[i] = expandEnv(broker)
+	if v := os.Getenv("DB_HOST"); v != "" {
+		c.Database.Host = v
+	} else {
+		c.Database.Host = expandEnv(c.Database.Host)
+	}
+	if v := os.Getenv("DB_USER"); v != "" {
+		c.Database.User = v
+	} else {
+		c.Database.User = expandEnv(c.Database.User)
+	}
+	if v := os.Getenv("DB_PASSWORD"); v != "" {
+		c.Database.Password = v
+	} else {
+		c.Database.Password = expandEnv(c.Database.Password)
+	}
+	if v := os.Getenv("DB_NAME"); v != "" {
+		c.Database.DBName = v
+	} else {
+		c.Database.DBName = expandEnv(c.Database.DBName)
+	}
+	if v := os.Getenv("REDIS_HOST"); v != "" {
+		c.Redis.Host = v
+	} else {
+		c.Redis.Host = expandEnv(c.Redis.Host)
+	}
+	if v := os.Getenv("REDIS_PASSWORD"); v != "" {
+		c.Redis.Password = v
+	} else {
+		c.Redis.Password = expandEnv(c.Redis.Password)
+	}
+	if v := os.Getenv("JWT_SECRET"); v != "" {
+		c.JWT.Secret = v
+	} else {
+		c.JWT.Secret = expandEnv(c.JWT.Secret)
+	}
+	if v := os.Getenv("AI_API_KEY"); v != "" {
+		c.AI.APIKey = v
+	} else {
+		c.AI.APIKey = expandEnv(c.AI.APIKey)
+	}
+	if v := os.Getenv("KAFKA_BROKER_1"); v != "" {
+		c.Kafka.Brokers = []string{v}
+	} else {
+		for i, broker := range c.Kafka.Brokers {
+			c.Kafka.Brokers[i] = expandEnv(broker)
+		}
 	}
 }
 

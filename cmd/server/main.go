@@ -50,6 +50,10 @@ func main() {
 	}
 	log.Info("database migration completed")
 
+	if err := database.SeedData(); err != nil {
+		log.Warn("failed to seed data", zap.Error(err))
+	}
+
 	if err := cache.Init(&cfg.Redis, log); err != nil {
 		log.Fatal("failed to init redis", zap.Error(err))
 	}

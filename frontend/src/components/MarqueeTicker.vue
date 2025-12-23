@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 
 interface Props {
   duration?: number;
@@ -25,8 +25,6 @@ const props = withDefaults(defineProps<Props>(), {
   direction: 'normal',
   pauseOnHover: true
 });
-
-const contentRef = ref<HTMLElement | null>(null);
 
 const wrapperStyle = computed(() => ({
   '--pause-state': props.pauseOnHover ? 'paused' : 'running'

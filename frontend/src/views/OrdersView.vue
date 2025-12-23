@@ -4,7 +4,7 @@ import { getOrders, payOrder, cancelOrder } from '@/api/order'
 import type { Order } from '@/types'
 import SmartImage from '@/components/SmartImage.vue'
 import BaseModal from '@/components/BaseModal.vue'
-import { Loader2, Package, XCircle, CheckCircle, Clock, AlertCircle, CreditCard, Ban } from 'lucide-vue-next'
+import { Loader2, Package, XCircle, CheckCircle, Clock, AlertCircle, Ban } from 'lucide-vue-next'
 
 const loading = ref(true)
 const orders = ref<Order[]>([])
@@ -49,7 +49,7 @@ const confirmPay = async () => {
   try {
     const res = await payOrder(selectedOrderNo.value)
     if (res.code === 0) {
-      const order = orders.value.find(o => o.order_no === selectedOrderNo.value)
+      const order = orders.value.find((o: Order) => o.order_no === selectedOrderNo.value)
       if (order) {
         order.status = 1
         order.paid_at = new Date().toISOString()
@@ -68,7 +68,7 @@ const confirmCancel = async () => {
   try {
     const res = await cancelOrder(selectedOrderNo.value)
     if (res.code === 0) {
-      const order = orders.value.find(o => o.order_no === selectedOrderNo.value)
+      const order = orders.value.find((o: Order) => o.order_no === selectedOrderNo.value)
       if (order) order.status = 2
     }
   } catch (e) {

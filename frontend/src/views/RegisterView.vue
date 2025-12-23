@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { sendEmailCode } from '@/api/auth'
-import { Loader2, ArrowRight, ArrowLeft, Mail, Check, AlertTriangle } from 'lucide-vue-next'
+import { ArrowRight, ArrowLeft, Check, AlertTriangle } from 'lucide-vue-next'
 
 const router = useRouter()
 const authStore = useAuthStore()

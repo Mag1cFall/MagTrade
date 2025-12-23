@@ -63,7 +63,7 @@ const handleSend = async () => {
             thinkingIdx = messages.value.length
             messages.value.push({ role: 'thinking', content: thinkingContent.value })
           } else {
-            messages.value[thinkingIdx].content = thinkingContent.value
+            messages.value[thinkingIdx]!.content = thinkingContent.value
           }
         } else if (chunk.type === 'content') {
           assistantContent += chunk.content
@@ -71,7 +71,7 @@ const handleSend = async () => {
             assistantIdx = messages.value.length
             messages.value.push({ role: 'assistant', content: assistantContent })
           } else {
-            messages.value[assistantIdx].content = assistantContent
+            messages.value[assistantIdx]!.content = assistantContent
           }
         }
         scrollToBottom()

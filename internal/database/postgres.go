@@ -68,6 +68,37 @@ func AutoMigrate() error {
 	)
 }
 
+func SeedData() error {
+	var count int64
+	db.Model(&model.User{}).Count(&count)
+	if count > 0 {
+		return nil
+	}
+
+	admin := model.User{
+		Username:      "admin",
+		Email:         "admin@magtrade.com",
+		PasswordHash:  "$2a$10$bKmO1qYASj5loeB5oT4nBO2NXISkf2E7vaOPQQ5/pBXy0FSQpQO0m",
+		Role:          "admin",
+		Status:        1,
+		EmailVerified: true,
+	}
+	if err := db.Create(&admin).Error; err != nil {
+		return err
+	}
+
+	products := []model.Product{
+		{Name: "iPhone 15 Pro Max", Description: "Apple 旗舰智能手机", OriginalPrice: 9999.00, Status: model.ProductStatusOnShelf},
+		{Name: "MacBook Pro 14", Description: "Apple M3 Pro 芯片笔记本电脑", OriginalPrice: 16999.00, Status: model.ProductStatusOnShelf},
+		{Name: "Sony PS5", Description: "次世代游戏主机", OriginalPrice: 3999.00, Status: model.ProductStatusOnShelf},
+	}
+	for _, p := range products {
+		db.Create(&p)
+	}
+
+	return nil
+}
+
 func Get() *gorm.DB {
 	if db == nil {
 		panic("database not initialized, call Init() first")
