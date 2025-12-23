@@ -2,11 +2,13 @@ package database
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/Mag1cFall/magtrade/internal/config"
 	"github.com/Mag1cFall/magtrade/internal/model"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -75,10 +77,26 @@ func SeedData() error {
 		return nil
 	}
 
+	var password string
+	appEnv := os.Getenv("APP_ENV")
+	if appEnv == "prod" || appEnv == "production" {
+		password = os.Getenv("ADMIN_INIT_PASSWORD")
+		if password == "" {
+			return fmt.Errorf("ADMIN_INIT_PASSWORD is required in production")
+		}
+	} else {
+		password = "admin123"
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
 	admin := model.User{
 		Username:      "admin",
 		Email:         "admin@magtrade.com",
-		PasswordHash:  "$2a$10$bKmO1qYASj5loeB5oT4nBO2NXISkf2E7vaOPQQ5/pBXy0FSQpQO0m",
+		PasswordHash:  string(hash),
 		Role:          "admin",
 		Status:        1,
 		EmailVerified: true,
@@ -87,13 +105,15 @@ func SeedData() error {
 		return err
 	}
 
-	products := []model.Product{
-		{Name: "iPhone 15 Pro Max", Description: "Apple 旗舰智能手机", OriginalPrice: 9999.00, Status: model.ProductStatusOnShelf},
-		{Name: "MacBook Pro 14", Description: "Apple M3 Pro 芯片笔记本电脑", OriginalPrice: 16999.00, Status: model.ProductStatusOnShelf},
-		{Name: "Sony PS5", Description: "次世代游戏主机", OriginalPrice: 3999.00, Status: model.ProductStatusOnShelf},
-	}
-	for _, p := range products {
-		db.Create(&p)
+	if appEnv != "prod" && appEnv != "production" {
+		products := []model.Product{
+			{Name: "iPhone 15 Pro Max", Description: "Apple 旗舰智能手机", OriginalPrice: 9999.00, Status: model.ProductStatusOnShelf},
+			{Name: "MacBook Pro 14", Description: "Apple M3 Pro 芯片笔记本电脑", OriginalPrice: 16999.00, Status: model.ProductStatusOnShelf},
+			{Name: "Sony PS5", Description: "次世代游戏主机", OriginalPrice: 3999.00, Status: model.ProductStatusOnShelf},
+		}
+		for _, p := range products {
+			db.Create(&p)
+		}
 	}
 
 	return nil

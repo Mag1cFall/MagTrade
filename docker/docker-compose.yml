@@ -17,6 +17,7 @@ services:
       - KAFKA_BROKER_1=kafka:9092
       - JWT_SECRET=${JWT_SECRET:-your-production-secret-change-me}
       - AI_API_KEY=${AI_API_KEY}
+      - ADMIN_INIT_PASSWORD=${ADMIN_INIT_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy

@@ -81,16 +81,20 @@ go run ./cmd/benchmark -c 50 -n 500
 git clone https://github.com/Mag1cFall/magtrade.git
 cd magtrade
 
-# 修改生产配置
-cp config/config.prod.yaml config/config.yaml
-# 编辑config.yaml修改数据库密码、JWT密钥等
+# 设置生产环境变量（必须）
+export DB_PASSWORD=your_secure_db_password
+export JWT_SECRET=your_jwt_secret_key
+export AI_API_KEY=your_ai_api_key
+export ADMIN_INIT_PASSWORD=your_admin_password  # 首次启动必需
 
 # 启动全部服务
 docker-compose -f docker/docker-compose.yml up -d
 
 # 查看日志
-docker-compose logs -f app
+docker-compose -f docker/docker-compose.yml logs -f backend
 ```
+
+> **注意**: `ADMIN_INIT_PASSWORD` 仅在首次启动（users表为空）时使用，之后可移除。
 
 ---
 
@@ -125,9 +129,13 @@ docker-compose -f docker/docker-compose.dev.yml up -d
 
 ## 六、默认账户
 
+### 开发环境
 | 用户名 | 密码 | 角色 |
 |--------|------|------|
 | admin | admin123 | 管理员 |
+
+### 生产环境
+首次启动时通过环境变量 `ADMIN_INIT_PASSWORD` 设置admin密码。
 
 ---
 

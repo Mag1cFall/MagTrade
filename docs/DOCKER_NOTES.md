@@ -41,10 +41,11 @@ docker-compose -f docker/docker-compose.dev.yml down -v   # 停止+删除数据
 ## 三、生产环境一键部署
 
 ```bash
-# 设置环境变量
+# 设置环境变量（必须）
 export DB_PASSWORD=your_secure_password
 export JWT_SECRET=your_jwt_secret
 export AI_API_KEY=your_api_key
+export ADMIN_INIT_PASSWORD=your_admin_password  # 首次启动必需
 
 # 一键启动全部
 docker-compose -f docker/docker-compose.yml up -d --build
@@ -56,6 +57,8 @@ docker-compose -f docker/docker-compose.yml logs -f backend
 docker-compose -f docker/docker-compose.yml build --no-cache frontend
 docker-compose -f docker/docker-compose.yml up -d frontend
 ```
+
+> **注意**: `ADMIN_INIT_PASSWORD` 仅在首次启动（users表为空）时使用，之后可移除。
 
 ---
 
@@ -172,16 +175,25 @@ func SeedData() error {
     var count int64
     db.Model(&model.User{}).Count(&count)
     if count > 0 {
-        return nil  // 已有数据，跳过
+        return nil
     }
-    
+
+    var password string
+    appEnv := os.Getenv("APP_ENV")
+    if appEnv == "prod" || appEnv == "production" {
+        password = os.Getenv("ADMIN_INIT_PASSWORD")
+        if password == "" {
+            return fmt.Errorf("ADMIN_INIT_PASSWORD is required in production")
+        }
+    } else {
+        password = "admin123"  // 开发环境默认
+    }
+
+    hash, _ := bcrypt.GenerateFromPassword([]byte(password), 12)
     admin := model.User{
         Username:     "admin",
-        Email:        "admin@magtrade.com",
-        PasswordHash: "$2a$10$bKmO1qYASj5loeB5oT4nBO2NXISkf2E7vaOPQQ5/pBXy0FSQpQO0m",
-        Role:         "admin",
-        Status:       1,
-        EmailVerified: true,
+        PasswordHash: string(hash),  // 动态生成
+        // ...
     }
     return db.Create(&admin).Error
 }
