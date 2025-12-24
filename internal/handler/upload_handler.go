@@ -72,7 +72,10 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 	}
 	hashStr := fmt.Sprintf("%x", hash.Sum(nil))
 
-	file.Seek(0, 0)
+	if _, err := file.Seek(0, 0); err != nil {
+		response.InternalError(c, "failed to reset file pointer")
+		return
+	}
 
 	dateDir := time.Now().Format("2006/01")
 	fullDir := filepath.Join(h.uploadDir, dateDir)
