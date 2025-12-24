@@ -61,6 +61,7 @@
               <span class="text-white font-bold">¥{{ cartStore.totalPrice.toFixed(2) }}</span>
             </div>
             <button 
+              @click="handleCheckout"
               :disabled="cartStore.items.length === 0"
               class="w-full py-3 bg-accent text-white font-bold rounded hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -70,17 +71,60 @@
         </div>
       </div>
     </Transition>
+    
+    <ConfirmModal
+      :show="showConfirmModal"
+      title="确认结算"
+      :message="confirmMessage"
+      type="info"
+      confirm-text="前往订单"
+      :show-cancel="true"
+      @confirm="onConfirmCheckout"
+      @cancel="onCancelCheckout"
+    />
   </Teleport>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { ShoppingCart, X, Trash2 } from 'lucide-vue-next'
 import { useCartStore } from '@/stores/cart'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 
 defineProps<{ open: boolean }>()
-defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: [] }>()
 
 const cartStore = useCartStore()
+const authStore = useAuthStore()
+const router = useRouter()
+
+const showConfirmModal = ref(false)
+const confirmMessage = ref('')
+
+const handleCheckout = () => {
+  if (!authStore.isAuthenticated) {
+    emit('close')
+    router.push('/login')
+    return
+  }
+  if (cartStore.items.length === 0) return
+  
+  confirmMessage.value = `即将提交 ${cartStore.totalItems} 件商品到订单，合计 ¥${cartStore.totalPrice.toFixed(2)}`
+  showConfirmModal.value = true
+}
+
+const onConfirmCheckout = () => {
+  showConfirmModal.value = false
+  cartStore.clearCart()
+  emit('close')
+  router.push('/orders')
+}
+
+const onCancelCheckout = () => {
+  showConfirmModal.value = false
+}
 </script>
 
 <style scoped>

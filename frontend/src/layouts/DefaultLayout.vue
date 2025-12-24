@@ -59,6 +59,7 @@ const toggleMobileMenu = () => {
         <!-- Desktop Menu -->
         <div class="hidden md:flex items-center gap-8">
           <RouterLink to="/" :class="linkClasses('/')">首页</RouterLink>
+          <RouterLink to="/shop" :class="linkClasses('/shop')">商店</RouterLink>
           <RouterLink to="/orders" :class="linkClasses('/orders')" v-if="authStore.isAuthenticated">我的订单</RouterLink>
           <RouterLink to="/admin" :class="linkClasses('/admin')" v-if="authStore.user?.role === 'admin'" class="text-accent font-bold">控制台</RouterLink>
           
@@ -88,6 +89,7 @@ const toggleMobileMenu = () => {
       <!-- Mobile Menu Overlay -->
       <div v-show="isMobileMenuOpen" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-40 flex flex-col items-center justify-center gap-8 md:hidden transition-opacity duration-300">
         <RouterLink to="/" @click="isMobileMenuOpen = false" class="text-2xl font-bold hover:text-accent">首页</RouterLink>
+        <RouterLink to="/shop" @click="isMobileMenuOpen = false" class="text-2xl font-bold hover:text-accent">商店</RouterLink>
         <RouterLink to="/orders" @click="isMobileMenuOpen = false" v-if="authStore.isAuthenticated" class="text-2xl font-bold hover:text-accent">我的订单</RouterLink>
         <RouterLink to="/admin" @click="isMobileMenuOpen = false" v-if="authStore.user?.role === 'admin'" class="text-2xl font-bold text-accent">商家后台</RouterLink>
         

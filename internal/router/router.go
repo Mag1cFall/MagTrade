@@ -37,6 +37,9 @@ func Setup(cfg *config.Config, producer *mq.Producer, wsHub *handler.WSHub, log 
 
 	captchaHandler := handler.NewCaptchaHandler()
 	metricsHandler := handler.NewMetricsHandler()
+	uploadHandler := handler.NewUploadHandler()
+
+	r.Static("/uploads", "./uploads")
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -116,6 +119,8 @@ func Setup(cfg *config.Config, producer *mq.Producer, wsHub *handler.WSHub, log 
 			admin.POST("/products", productHandler.Create)
 			admin.PUT("/products/:id", productHandler.Update)
 			admin.DELETE("/products/:id", productHandler.Delete)
+
+			admin.POST("/upload", uploadHandler.Upload)
 
 			admin.POST("/flash-sales", flashSaleHandler.Create)
 

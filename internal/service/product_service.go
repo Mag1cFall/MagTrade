@@ -63,7 +63,7 @@ func (s *ProductService) List(ctx context.Context, page, pageSize int) (*Product
 	if page < 1 {
 		page = 1
 	}
-	if pageSize < 1 || pageSize > 100 {
+	if pageSize < 1 || pageSize > 200 {
 		pageSize = 20
 	}
 

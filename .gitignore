@@ -28,3 +28,9 @@ coverage.html
 *~
 .DS_Store
 Thumbs.db
+
+# Runtime generated files
+uploads/
+node_modules/
+frontend/dist/
+frontend/node_modules/

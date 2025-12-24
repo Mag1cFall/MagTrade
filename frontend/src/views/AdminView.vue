@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { createProduct, createFlashSale } from '@/api/admin'
+import { uploadImage } from '@/api/upload'
 import { getProducts } from '@/api/product'
 import type { Product } from '@/types'
 import { Loader2, Plus, Package, Zap, RefreshCw, Upload, Sparkles, BrainCircuit } from 'lucide-vue-next'
@@ -12,6 +13,7 @@ const generatingAI = ref(false)
 const generatingFlashAI = ref(false)
 const message = ref('')
 const messageType = ref<'success' | 'error'>('success')
+const uploadingImage = ref(false)
 
 const generateAIContent = async () => {
   if (!productForm.value.name) {
@@ -100,40 +102,35 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
   setTimeout(() => message.value = '', 4000)
 }
 
-const handleImageUpload = (event: Event) => {
+const handleImageUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement
   if (input.files && input.files[0]) {
     const file = input.files[0]
-    if (file.size > 2 * 1024 * 1024) {
-      showMessage('Object too dense. Max 2MB allowed.', 'error')
+    if (file.size > 5 * 1024 * 1024) {
+      showMessage('Object too dense. Max 5MB allowed.', 'error')
+      input.value = ''
       return
     }
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        let width = img.width
-        let height = img.height
-        const maxSide = 1024
-        if (width > maxSide || height > maxSide) {
-          if (width > height) {
-            height = (height / width) * maxSide
-            width = maxSide
-          } else {
-            width = (width / height) * maxSide
-            height = maxSide
-          }
-        }
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')
-        ctx?.drawImage(img, 0, 0, width, height)
-        productForm.value.image_url = canvas.toDataURL('image/jpeg', 0.8)
-      }
-      img.src = e.target?.result as string
+    if (!file.type.startsWith('image/')) {
+      showMessage('Only image files allowed.', 'error')
+      input.value = ''
+      return
     }
-    reader.readAsDataURL(file)
+    uploadingImage.value = true
+    try {
+      const res = await uploadImage(file)
+      if (res.code === 0) {
+        productForm.value.image_url = res.data.url
+        showMessage('Image uploaded successfully', 'success')
+      } else {
+        showMessage(res.message || 'Upload failed', 'error')
+      }
+    } catch (e: any) {
+      showMessage(e.response?.data?.message || 'Upload failed', 'error')
+    } finally {
+      uploadingImage.value = false
+      input.value = ''
+    }
   }
 }
 
@@ -148,8 +145,7 @@ const handleCreateProduct = async () => {
     if (res.code === 0) {
       showMessage(`Registry Entry Created: ID ${res.data.id}`, 'success')
       flashSaleForm.value.product_id = res.data.id
-      const prevImg = productForm.value.image_url
-      productForm.value = { name: '', description: '', original_price: 0, image_url: prevImg }
+      productForm.value = { name: '', description: '', original_price: 0, image_url: '' }
     } else {
       showMessage(res.message, 'error')
     }

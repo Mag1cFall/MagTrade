@@ -24,7 +24,7 @@ import FeatureCards from '@/components/FeatureCards.vue'
 import PartnersCarousel from '@/components/PartnersCarousel.vue'
 import FAQAccordion from '@/components/FAQAccordion.vue'
 import NewsletterCTA from '@/components/NewsletterCTA.vue'
-import { Loader2, Zap, Activity, ChevronDown, Shield, Globe, CheckCircle, ArrowRight } from 'lucide-vue-next'
+import { Loader2, Zap, Activity, Shield, Globe, CheckCircle, ArrowRight } from 'lucide-vue-next'
 
 const router = useRouter()
 const loading = ref(true)

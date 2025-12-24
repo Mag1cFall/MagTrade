@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h } from 'vue';
+import { computed } from 'vue';
 import { Apple, Smartphone, Laptop, Headphones, Watch, Gamepad2, Camera, Speaker } from 'lucide-vue-next';
 
 const brands = [
