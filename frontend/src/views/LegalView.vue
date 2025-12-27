@@ -100,7 +100,7 @@ const tabs = [
             </div>
             <div class="p-6 bg-surface-light border border-white/5 rounded hover:border-accent/50 transition-colors cursor-pointer group">
               <h3 class="font-bold text-white mb-2 group-hover:text-accent">Email Support</h3>
-              <p class="text-sm text-secondary">lk25611295@gmail.com</p>
+              <p class="text-sm text-secondary">chaemsxadmanph@gmail.com</p>
               <p class="text-xs text-tertiary mt-2">Response time: < 2 hours</p>
             </div>
           </div>

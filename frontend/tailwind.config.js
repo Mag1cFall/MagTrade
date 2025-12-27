@@ -12,7 +12,7 @@ export default {
         surface: '#121212',    // 卡片/表面颜色
         'surface-light': '#1E1E1E', // 略亮的表面
         border: '#2A2A2A',     // 极细边框
-        
+
         // 文字颜色
         primary: '#FFFFFF',    // 主标题
         secondary: '#A1A1AA',  // 次要文字/正文
@@ -24,8 +24,8 @@ export default {
         'accent-dim': 'rgba(255, 59, 48, 0.1)', // 红色微光背景
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'], // 用于数字和代码
+        sans: ['MagFont', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       animation: {
         'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
