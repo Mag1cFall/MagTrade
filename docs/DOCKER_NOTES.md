@@ -312,3 +312,44 @@ docker network inspect docker_default
 docker volume ls
 docker volume inspect docker_mt_postgres_data
 ```
+
+---
+
+## 十、Git LFS 大檔案管理
+
+### 什麼是 Git LFS？
+Git Large File Storage，用於管理大型二進制檔案（圖片、字體、視頻等）。避免 repo 因大檔案而變得臃腫。
+
+### 初始化（一次性）
+```bash
+git lfs install
+```
+
+### 追蹤檔案類型
+```bash
+git lfs track "*.ttf"     # 字體
+git lfs track "*.png"     # 圖片
+git lfs track "*.mp4"     # 視頻
+```
+
+### 查看追蹤規則
+```bash
+cat .gitattributes
+```
+
+### 查看 LFS 檔案
+```bash
+git lfs ls-files
+```
+
+### 提交流程（與普通 git 相同）
+```bash
+git add .gitattributes    # 必須先提交追蹤規則
+git add -A
+git commit -m "feat: 添加自訂字體"
+git push
+```
+
+### 本項目 LFS 追蹤
+- `*.ttf` - 自訂字體 (MagFont.ttf)
+
