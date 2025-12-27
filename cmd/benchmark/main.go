@@ -1,3 +1,8 @@
+// 效能基準測試工具
+//
+// 本檔案是獨立的 HTTP 壓力測試工具
+// 用於測試 API 端點的 QPS、延遲、成功率等指標
+// 執行：go run cmd/benchmark/main.go -c 100 -n 1000
 package main
 
 import (
@@ -10,12 +15,14 @@ import (
 	"time"
 )
 
+// Result 單次請求結果
 type Result struct {
 	Success  bool
 	Duration time.Duration
 	Status   int
 }
 
+// Stats 統計結果
 type Stats struct {
 	Total     int64
 	Success   int64
@@ -23,7 +30,7 @@ type Stats struct {
 	TotalTime time.Duration
 	MinTime   time.Duration
 	MaxTime   time.Duration
-	Latencies []time.Duration
+	Latencies []time.Duration // 用於計算百分位
 }
 
 func main() {
@@ -32,14 +39,13 @@ func main() {
 	requests := flag.Int("n", 1000, "Total requests")
 	flag.Parse()
 
-	fmt.Println("==========================================")
-	fmt.Println("  MagTrade Benchmark Tool (Go)")
-	fmt.Println("==========================================")
+	fmt.Println("MagTrade Benchmark Tool (Go)")
 	fmt.Printf("Target: %s\n", *baseURL)
 	fmt.Printf("Concurrency: %d\n", *concurrency)
 	fmt.Printf("Total Requests: %d\n", *requests)
 	fmt.Println()
 
+	// 測試端點列表
 	endpoints := []struct {
 		Name string
 		Path string
@@ -60,6 +66,7 @@ func main() {
 		fmt.Println()
 	}
 
+	// 總結報告
 	fmt.Println("==========================================")
 	fmt.Println("  Summary")
 	fmt.Println("==========================================")
@@ -94,6 +101,7 @@ func main() {
 	fmt.Println()
 }
 
+// benchmark 執行壓力測試
 func benchmark(url string, concurrency, total int) *Stats {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -107,6 +115,7 @@ func benchmark(url string, concurrency, total int) *Stats {
 	var wg sync.WaitGroup
 	resultChan := make(chan Result, total)
 
+	// 分配請求數
 	requestsPerWorker := total / concurrency
 	remainder := total % concurrency
 
@@ -132,6 +141,7 @@ func benchmark(url string, concurrency, total int) *Stats {
 	totalTime := time.Since(start)
 	close(resultChan)
 
+	// 統計結果
 	stats := &Stats{
 		TotalTime: totalTime,
 		MinTime:   time.Hour,
@@ -157,6 +167,7 @@ func benchmark(url string, concurrency, total int) *Stats {
 	return stats
 }
 
+// makeRequest 發送單次請求
 func makeRequest(client *http.Client, url string) Result {
 	start := time.Now()
 
@@ -166,7 +177,7 @@ func makeRequest(client *http.Client, url string) Result {
 	}
 	defer resp.Body.Close()
 
-	_, _ = io.Copy(io.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body) // 消耗 body
 
 	return Result{
 		Success:  resp.StatusCode == http.StatusOK,
@@ -175,6 +186,7 @@ func makeRequest(client *http.Client, url string) Result {
 	}
 }
 
+// printStats 輸出單個端點統計
 func printStats(name string, s *Stats) {
 	fmt.Printf("Testing: %s\n", name)
 

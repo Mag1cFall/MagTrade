@@ -1,3 +1,7 @@
+// 訂單相關 HTTP 處理器
+//
+// 本檔案處理訂單相關請求
+// 包含：訂單列表、訂單詳情、支付、取消
 package handler
 
 import (
@@ -11,6 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// OrderHandler 訂單處理器
 type OrderHandler struct {
 	orderService *service.OrderService
 }
@@ -21,6 +26,8 @@ func NewOrderHandler(producer *mq.Producer, log *zap.Logger) *OrderHandler {
 	}
 }
 
+// List 查詢當前使用者的訂單列表
+// GET /api/v1/orders?page=1&page_size=20
 func (h *OrderHandler) List(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -40,6 +47,8 @@ func (h *OrderHandler) List(c *gin.Context) {
 	response.Success(c, result)
 }
 
+// GetByOrderNo 根據訂單號查詢訂單詳情
+// GET /api/v1/orders/:order_no
 func (h *OrderHandler) GetByOrderNo(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -62,6 +71,8 @@ func (h *OrderHandler) GetByOrderNo(c *gin.Context) {
 	response.Success(c, order)
 }
 
+// Pay 支付訂單（模擬支付）
+// POST /api/v1/orders/:order_no/pay
 func (h *OrderHandler) Pay(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -88,6 +99,8 @@ func (h *OrderHandler) Pay(c *gin.Context) {
 	response.SuccessWithMessage(c, "支付成功", order)
 }
 
+// Cancel 取消訂單
+// POST /api/v1/orders/:order_no/cancel
 func (h *OrderHandler) Cancel(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {

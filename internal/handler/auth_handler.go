@@ -1,3 +1,8 @@
+// 認證相關 HTTP 處理器
+//
+// 本檔案處理使用者認證相關請求
+// 包含：註冊、登入、Token 刷新、取得當前使用者資訊
+// 整合驗證碼服務和郵件驗證服務
 package handler
 
 import (
@@ -9,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// AuthHandler 認證處理器
 type AuthHandler struct {
 	authService    *service.AuthService
 	captchaService *service.CaptchaService
@@ -27,6 +33,8 @@ func NewAuthHandler(jwtCfg *config.JWTConfig, emailCfg *config.EmailConfig) *Aut
 	}
 }
 
+// SendEmailCode 發送郵件驗證碼
+// POST /api/v1/auth/send-code
 func (h *AuthHandler) SendEmailCode(c *gin.Context) {
 	var req service.SendCodeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -46,6 +54,8 @@ func (h *AuthHandler) SendEmailCode(c *gin.Context) {
 	response.Success(c, gin.H{"message": "验证码已发送"})
 }
 
+// Register 使用者註冊
+// POST /api/v1/auth/register
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req service.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -66,6 +76,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	response.Success(c, result)
 }
 
+// Login 使用者登入
+// POST /api/v1/auth/login
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req service.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -78,7 +90,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		switch err {
 		case service.ErrInvalidCredentials:
 			identifier := req.Username
-			needsCaptcha := h.captchaService.NeedsCaptcha(c.Request.Context(), identifier)
+			needsCaptcha := h.captchaService.NeedsCaptcha(c.Request.Context(), identifier) // 多次失敗需要驗證碼
 			response.Unauthorized(c, "用户名或密码错误", gin.H{"needs_captcha": needsCaptcha})
 			return
 		case service.ErrUserDisabled:
@@ -102,10 +114,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	response.Success(c, result)
 }
 
+// RefreshTokenRequest 刷新 Token 請求
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
+// Refresh 刷新 Access Token
+// POST /api/v1/auth/refresh
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	var req RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -126,6 +141,8 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	response.Success(c, result)
 }
 
+// Me 取得當前登入使用者資訊
+// GET /api/v1/auth/me
 func (h *AuthHandler) Me(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {

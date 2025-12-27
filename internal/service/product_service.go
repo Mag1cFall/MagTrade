@@ -1,3 +1,7 @@
+// 商品業務服務
+//
+// 本檔案處理商品 CRUD 業務邏輯
+// 包含：建立、查詢、更新、刪除商品
 package service
 
 import (
@@ -7,6 +11,7 @@ import (
 	"github.com/Mag1cFall/magtrade/internal/repository"
 )
 
+// ProductService 商品服務
 type ProductService struct {
 	productRepo *repository.ProductRepository
 }
@@ -17,6 +22,7 @@ func NewProductService() *ProductService {
 	}
 }
 
+// CreateProductRequest 建立商品請求
 type CreateProductRequest struct {
 	Name          string  `json:"name" binding:"required,max=200"`
 	Description   string  `json:"description"`
@@ -24,14 +30,16 @@ type CreateProductRequest struct {
 	ImageURL      string  `json:"image_url"`
 }
 
+// UpdateProductRequest 更新商品請求
 type UpdateProductRequest struct {
 	Name          string  `json:"name" binding:"max=200"`
 	Description   string  `json:"description"`
 	OriginalPrice float64 `json:"original_price" binding:"omitempty,gt=0"`
 	ImageURL      string  `json:"image_url"`
-	Status        *int8   `json:"status" binding:"omitempty,oneof=0 1"`
+	Status        *int8   `json:"status" binding:"omitempty,oneof=0 1"` // 0=下架 1=上架
 }
 
+// ProductListResponse 商品列表回應
 type ProductListResponse struct {
 	Products []model.Product `json:"products"`
 	Total    int64           `json:"total"`
@@ -39,13 +47,14 @@ type ProductListResponse struct {
 	PageSize int             `json:"page_size"`
 }
 
+// Create 建立商品
 func (s *ProductService) Create(ctx context.Context, req *CreateProductRequest) (*model.Product, error) {
 	product := &model.Product{
 		Name:          req.Name,
 		Description:   req.Description,
 		OriginalPrice: req.OriginalPrice,
 		ImageURL:      req.ImageURL,
-		Status:        model.ProductStatusOnShelf,
+		Status:        model.ProductStatusOnShelf, // 預設上架
 	}
 
 	if err := s.productRepo.Create(ctx, product); err != nil {
@@ -55,10 +64,12 @@ func (s *ProductService) Create(ctx context.Context, req *CreateProductRequest) 
 	return product, nil
 }
 
+// GetByID 根據 ID 查詢商品
 func (s *ProductService) GetByID(ctx context.Context, id int64) (*model.Product, error) {
 	return s.productRepo.GetByID(ctx, id)
 }
 
+// List 查詢商品列表
 func (s *ProductService) List(ctx context.Context, page, pageSize int) (*ProductListResponse, error) {
 	if page < 1 {
 		page = 1
@@ -80,12 +91,14 @@ func (s *ProductService) List(ctx context.Context, page, pageSize int) (*Product
 	}, nil
 }
 
+// Update 更新商品（部分更新）
 func (s *ProductService) Update(ctx context.Context, id int64, req *UpdateProductRequest) (*model.Product, error) {
 	product, err := s.productRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
+	// 只更新有值的欄位
 	if req.Name != "" {
 		product.Name = req.Name
 	}
@@ -109,6 +122,7 @@ func (s *ProductService) Update(ctx context.Context, id int64, req *UpdateProduc
 	return product, nil
 }
 
+// Delete 刪除商品（軟刪除）
 func (s *ProductService) Delete(ctx context.Context, id int64) error {
 	return s.productRepo.Delete(ctx, id)
 }

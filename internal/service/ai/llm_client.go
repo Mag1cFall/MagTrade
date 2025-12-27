@@ -1,3 +1,8 @@
+// LLM 大語言模型客戶端
+//
+// 本檔案封裝 OpenAI 兼容 API（如 SiliconFlow）的調用
+// 支援普通對話和串流對話（SSE）
+// 主要用於智慧客服和策略分析
 package ai
 
 import (
@@ -15,6 +20,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// LLMClient 大語言模型客戶端
 type LLMClient struct {
 	cfg        *config.AIConfig
 	httpClient *http.Client
@@ -25,18 +31,20 @@ func NewLLMClient(cfg *config.AIConfig, log *zap.Logger) *LLMClient {
 	return &LLMClient{
 		cfg: cfg,
 		httpClient: &http.Client{
-			Timeout: 120 * time.Second,
+			Timeout: 120 * time.Second, // LLM 回應可能較慢
 		},
 		log: log,
 	}
 }
 
+// ChatMessage 對話消息
 type ChatMessage struct {
-	Role             string `json:"role"`
+	Role             string `json:"role"` // system/user/assistant
 	Content          string `json:"content"`
-	ReasoningContent string `json:"reasoning_content,omitempty"`
+	ReasoningContent string `json:"reasoning_content,omitempty"` // 思考過程（部分模型支援）
 }
 
+// ChatCompletionRequest OpenAI 格式請求
 type ChatCompletionRequest struct {
 	Model       string        `json:"model"`
 	Messages    []ChatMessage `json:"messages"`
@@ -45,6 +53,7 @@ type ChatCompletionRequest struct {
 	Stream      bool          `json:"stream"`
 }
 
+// ChatCompletionResponse OpenAI 格式回應
 type ChatCompletionResponse struct {
 	ID      string `json:"id"`
 	Object  string `json:"object"`
@@ -57,7 +66,7 @@ type ChatCompletionResponse struct {
 			Content          string `json:"content"`
 			ReasoningContent string `json:"reasoning_content,omitempty"`
 		} `json:"message"`
-		Delta struct {
+		Delta struct { // 串流時的增量內容
 			Role             string `json:"role"`
 			Content          string `json:"content"`
 			ReasoningContent string `json:"reasoning_content,omitempty"`
@@ -71,12 +80,14 @@ type ChatCompletionResponse struct {
 	} `json:"usage"`
 }
 
+// StreamChunk 串流對話的單個片段
 type StreamChunk struct {
-	Type    string `json:"type"`
+	Type    string `json:"type"` // thinking/content/done/error
 	Content string `json:"content"`
 	Done    bool   `json:"done"`
 }
 
+// Chat 普通對話（等待完整回應）
 func (c *LLMClient) Chat(ctx context.Context, messages []ChatMessage) (string, error) {
 	reqBody := ChatCompletionRequest{
 		Model:       c.cfg.Model,
@@ -135,6 +146,7 @@ func (c *LLMClient) Chat(ctx context.Context, messages []ChatMessage) (string, e
 	return chatResp.Choices[0].Message.Content, nil
 }
 
+// ChatStream 串流對話（逐字回傳）
 func (c *LLMClient) ChatStream(ctx context.Context, messages []ChatMessage, chunkHandler func(chunk StreamChunk) error) error {
 	reqBody := ChatCompletionRequest{
 		Model:       c.cfg.Model,
@@ -169,6 +181,7 @@ func (c *LLMClient) ChatStream(ctx context.Context, messages []ChatMessage, chun
 		return fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(body))
 	}
 
+	// 解析 SSE 串流
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -176,7 +189,7 @@ func (c *LLMClient) ChatStream(ctx context.Context, messages []ChatMessage, chun
 			continue
 		}
 		data := strings.TrimPrefix(line, "data: ")
-		if data == "[DONE]" {
+		if data == "[DONE]" { // 串流結束
 			return chunkHandler(StreamChunk{Type: "done", Done: true})
 		}
 
@@ -190,12 +203,12 @@ func (c *LLMClient) ChatStream(ctx context.Context, messages []ChatMessage, chun
 		}
 
 		delta := chatResp.Choices[0].Delta
-		if delta.ReasoningContent != "" {
+		if delta.ReasoningContent != "" { // 思考過程
 			if err := chunkHandler(StreamChunk{Type: "thinking", Content: delta.ReasoningContent}); err != nil {
 				return err
 			}
 		}
-		if delta.Content != "" {
+		if delta.Content != "" { // 正式內容
 			if err := chunkHandler(StreamChunk{Type: "content", Content: delta.Content}); err != nil {
 				return err
 			}
@@ -205,6 +218,7 @@ func (c *LLMClient) ChatStream(ctx context.Context, messages []ChatMessage, chun
 	return scanner.Err()
 }
 
+// ChatWithSystem 帶系統提示詞的對話
 func (c *LLMClient) ChatWithSystem(ctx context.Context, systemPrompt string, userMessage string) (string, error) {
 	messages := []ChatMessage{
 		{Role: "system", Content: systemPrompt},
@@ -213,6 +227,7 @@ func (c *LLMClient) ChatWithSystem(ctx context.Context, systemPrompt string, use
 	return c.Chat(ctx, messages)
 }
 
+// ChatWithHistory 帶歷史記錄的對話
 func (c *LLMClient) ChatWithHistory(ctx context.Context, systemPrompt string, history []ChatMessage, userMessage string) (string, error) {
 	messages := make([]ChatMessage, 0, len(history)+2)
 	messages = append(messages, ChatMessage{Role: "system", Content: systemPrompt})
@@ -221,6 +236,7 @@ func (c *LLMClient) ChatWithHistory(ctx context.Context, systemPrompt string, hi
 	return c.Chat(ctx, messages)
 }
 
+// ChatStreamWithHistory 帶歷史記錄的串流對話
 func (c *LLMClient) ChatStreamWithHistory(ctx context.Context, systemPrompt string, history []ChatMessage, userMessage string, chunkHandler func(chunk StreamChunk) error) error {
 	messages := make([]ChatMessage, 0, len(history)+2)
 	messages = append(messages, ChatMessage{Role: "system", Content: systemPrompt})

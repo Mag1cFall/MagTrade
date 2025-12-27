@@ -1,3 +1,8 @@
+// 訂單業務服務
+//
+// 本檔案處理訂單相關業務邏輯
+// 包含：從 Kafka 消息建立訂單、付款、取消、過期訂單處理
+// 取消訂單會恢復 Redis 和 DB 庫存
 package service
 
 import (
@@ -12,6 +17,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// OrderService 訂單服務
 type OrderService struct {
 	orderRepo     *repository.OrderRepository
 	flashSaleRepo *repository.FlashSaleRepository
@@ -30,6 +36,7 @@ func NewOrderService(producer *mq.Producer, log *zap.Logger) *OrderService {
 	}
 }
 
+// OrderListResponse 訂單列表回應
 type OrderListResponse struct {
 	Orders   []model.Order `json:"orders"`
 	Total    int64         `json:"total"`
@@ -37,12 +44,14 @@ type OrderListResponse struct {
 	PageSize int           `json:"page_size"`
 }
 
+// CreateFromMessage 從 Kafka 消息建立訂單（Worker 呼叫）
 func (s *OrderService) CreateFromMessage(ctx context.Context, msg *mq.FlashSaleOrderMessage) (*model.Order, error) {
 	flashSale, err := s.flashSaleRepo.GetByID(ctx, msg.FlashSaleID)
 	if err != nil {
 		return nil, err
 	}
 
+	// 冪等性檢查：防止重複建立
 	existing, err := s.orderRepo.GetByUserAndFlashSale(ctx, msg.UserID, msg.FlashSaleID)
 	if err != nil {
 		return nil, err
@@ -68,6 +77,7 @@ func (s *OrderService) CreateFromMessage(ctx context.Context, msg *mq.FlashSaleO
 		return nil, err
 	}
 
+	// 同步扣減 DB 庫存
 	if err := s.flashSaleRepo.DecrementStock(ctx, msg.FlashSaleID, msg.Quantity); err != nil {
 		s.log.Error("failed to decrement db stock", zap.Error(err))
 	}
@@ -81,19 +91,21 @@ func (s *OrderService) CreateFromMessage(ctx context.Context, msg *mq.FlashSaleO
 	return order, nil
 }
 
+// GetByOrderNo 根據訂單號查詢（需驗證使用者）
 func (s *OrderService) GetByOrderNo(ctx context.Context, userID int64, orderNo string) (*model.Order, error) {
 	order, err := s.orderRepo.GetByOrderNo(ctx, orderNo)
 	if err != nil {
 		return nil, err
 	}
 
-	if order.UserID != userID {
+	if order.UserID != userID { // 防止越權
 		return nil, repository.ErrOrderNotFound
 	}
 
 	return order, nil
 }
 
+// ListByUser 查詢使用者訂單列表
 func (s *OrderService) ListByUser(ctx context.Context, userID int64, page, pageSize int) (*OrderListResponse, error) {
 	if page < 1 {
 		page = 1
@@ -115,6 +127,7 @@ func (s *OrderService) ListByUser(ctx context.Context, userID int64, page, pageS
 	}, nil
 }
 
+// Pay 支付訂單（模擬支付）
 func (s *OrderService) Pay(ctx context.Context, userID int64, orderNo string) (*model.Order, error) {
 	order, err := s.orderRepo.GetByOrderNo(ctx, orderNo)
 	if err != nil {
@@ -142,6 +155,7 @@ func (s *OrderService) Pay(ctx context.Context, userID int64, orderNo string) (*
 	return order, nil
 }
 
+// Cancel 取消訂單（恢復庫存）
 func (s *OrderService) Cancel(ctx context.Context, userID int64, orderNo string) (*model.Order, error) {
 	order, err := s.orderRepo.GetByOrderNo(ctx, orderNo)
 	if err != nil {
@@ -160,10 +174,12 @@ func (s *OrderService) Cancel(ctx context.Context, userID int64, orderNo string)
 		return nil, err
 	}
 
+	// 恢復 Redis 庫存
 	if err := s.stockService.RestoreStock(ctx, order.FlashSaleID, userID, order.Quantity); err != nil {
 		s.log.Error("failed to restore redis stock", zap.Error(err))
 	}
 
+	// 恢復 DB 庫存
 	if err := s.flashSaleRepo.IncrementStock(ctx, order.FlashSaleID, order.Quantity); err != nil {
 		s.log.Error("failed to restore db stock", zap.Error(err))
 	}
@@ -174,6 +190,7 @@ func (s *OrderService) Cancel(ctx context.Context, userID int64, orderNo string)
 	return order, nil
 }
 
+// CancelExpiredOrders 取消過期未付款訂單（定時任務呼叫）
 func (s *OrderService) CancelExpiredOrders(ctx context.Context, expireDuration time.Duration) error {
 	orders, err := s.orderRepo.CancelExpiredPending(ctx, expireDuration, 100)
 	if err != nil {
@@ -181,6 +198,7 @@ func (s *OrderService) CancelExpiredOrders(ctx context.Context, expireDuration t
 	}
 
 	for _, order := range orders {
+		// 恢復庫存
 		if err := s.stockService.RestoreStock(ctx, order.FlashSaleID, order.UserID, order.Quantity); err != nil {
 			s.log.Error("failed to restore redis stock for expired order",
 				zap.String("order_no", order.OrderNo),
@@ -205,6 +223,7 @@ func (s *OrderService) CancelExpiredOrders(ctx context.Context, expireDuration t
 	return nil
 }
 
+// notifyOrderStatusChange 發送訂單狀態變更消息
 func (s *OrderService) notifyOrderStatusChange(ctx context.Context, order *model.Order, oldStatus, newStatus model.OrderStatus) {
 	msg := &mq.OrderStatusChangeMessage{
 		MessageID: utils.GenerateTicket(),

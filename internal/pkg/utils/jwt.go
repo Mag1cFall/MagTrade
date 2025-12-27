@@ -1,3 +1,8 @@
+// JWT Token 工具
+//
+// 本檔案處理 JWT Token 生成和驗證
+// 支援 Access Token 和 Refresh Token 雙 Token 機制
+// 使用 HS256 簽名演算法
 package utils
 
 import (
@@ -8,6 +13,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// TokenType Token 類型
 type TokenType string
 
 const (
@@ -15,11 +21,12 @@ const (
 	RefreshToken TokenType = "refresh"
 )
 
+// Claims 自訂 JWT Claims
 type Claims struct {
 	UserID   int64     `json:"user_id"`
 	Username string    `json:"username"`
 	Role     string    `json:"role"`
-	Type     TokenType `json:"type"`
+	Type     TokenType `json:"type"` // access/refresh
 	jwt.RegisteredClaims
 }
 
@@ -28,6 +35,7 @@ var (
 	ErrExpiredToken = errors.New("token has expired")
 )
 
+// GenerateTokenPair 生成 Access + Refresh Token 對
 func GenerateTokenPair(userID int64, username, role string, cfg *config.JWTConfig) (accessToken, refreshToken string, err error) {
 	accessToken, err = generateToken(userID, username, role, AccessToken, cfg.AccessTokenExpire, cfg.Secret)
 	if err != nil {
@@ -42,6 +50,7 @@ func GenerateTokenPair(userID int64, username, role string, cfg *config.JWTConfi
 	return accessToken, refreshToken, nil
 }
 
+// generateToken 生成單個 Token
 func generateToken(userID int64, username, role string, tokenType TokenType, expire time.Duration, secret string) (string, error) {
 	claims := &Claims{
 		UserID:   userID,
@@ -60,6 +69,7 @@ func generateToken(userID int64, username, role string, tokenType TokenType, exp
 	return token.SignedString([]byte(secret))
 }
 
+// ParseToken 解析並驗證 Token
 func ParseToken(tokenString, secret string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -83,6 +93,7 @@ func ParseToken(tokenString, secret string) (*Claims, error) {
 	return claims, nil
 }
 
+// ValidateAccessToken 驗證 Access Token
 func ValidateAccessToken(tokenString, secret string) (*Claims, error) {
 	claims, err := ParseToken(tokenString, secret)
 	if err != nil {
@@ -96,6 +107,7 @@ func ValidateAccessToken(tokenString, secret string) (*Claims, error) {
 	return claims, nil
 }
 
+// ValidateRefreshToken 驗證 Refresh Token
 func ValidateRefreshToken(tokenString, secret string) (*Claims, error) {
 	claims, err := ParseToken(tokenString, secret)
 	if err != nil {

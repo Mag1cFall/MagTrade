@@ -1,3 +1,7 @@
+// 商品相關 HTTP 處理器
+//
+// 本檔案處理商品 CRUD 相關請求
+// 列表和詳情公開訪問，建立/更新/刪除需要管理員權限
 package handler
 
 import (
@@ -8,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ProductHandler 商品處理器
 type ProductHandler struct {
 	productService *service.ProductService
 }
@@ -18,6 +23,8 @@ func NewProductHandler() *ProductHandler {
 	}
 }
 
+// List 查詢商品列表
+// GET /api/v1/products?page=1&page_size=20
 func (h *ProductHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
@@ -31,6 +38,8 @@ func (h *ProductHandler) List(c *gin.Context) {
 	response.Success(c, result)
 }
 
+// GetByID 查詢商品詳情
+// GET /api/v1/products/:id
 func (h *ProductHandler) GetByID(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -47,6 +56,8 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 	response.Success(c, product)
 }
 
+// Create 建立商品（管理員專用）
+// POST /api/v1/products
 func (h *ProductHandler) Create(c *gin.Context) {
 	var req service.CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -63,6 +74,8 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	response.Success(c, product)
 }
 
+// Update 更新商品（管理員專用）
+// PUT /api/v1/products/:id
 func (h *ProductHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -85,6 +98,8 @@ func (h *ProductHandler) Update(c *gin.Context) {
 	response.Success(c, product)
 }
 
+// Delete 刪除商品（軟刪除，管理員專用）
+// DELETE /api/v1/products/:id
 func (h *ProductHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

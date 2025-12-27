@@ -1,3 +1,8 @@
+// 郵件服務
+//
+// 本檔案提供郵件發送功能
+// 用於發送註冊驗證碼、密碼重置等郵件
+// 支援 TLS 加密的 SMTP 連線
 package service
 
 import (
@@ -18,6 +23,7 @@ var (
 	ErrInvalidEmailCode     = errors.New("invalid or expired verification code")
 )
 
+// EmailService 郵件服務
 type EmailService struct {
 	redis *redis.Client
 	cfg   *config.EmailConfig
@@ -30,7 +36,9 @@ func NewEmailService(rdb *redis.Client, cfg *config.EmailConfig) *EmailService {
 	}
 }
 
+// SendEmailCode 發送郵件驗證碼
 func (s *EmailService) SendEmailCode(ctx context.Context, email string) error {
+	// 檢查冷卻時間（60 秒內不能重複發送）
 	cooldownKey := fmt.Sprintf("email_code_cooldown:%s", email)
 	exists, _ := s.redis.Exists(ctx, cooldownKey).Result()
 	if exists > 0 {
@@ -40,19 +48,23 @@ func (s *EmailService) SendEmailCode(ctx context.Context, email string) error {
 	code := s.generateCode(6)
 	codeKey := fmt.Sprintf("email_code:%s", email)
 
+	// 儲存驗證碼（15 分鐘過期）
 	if err := s.redis.Set(ctx, codeKey, code, 15*time.Minute).Err(); err != nil {
 		return err
 	}
 
+	// 設定冷卻時間
 	if err := s.redis.Set(ctx, cooldownKey, "1", 60*time.Second).Err(); err != nil {
 		return err
 	}
 
+	// 開發環境：輸出到控制台
 	if s.cfg == nil || s.cfg.SMTPHost == "" {
 		fmt.Printf("[DEV MODE] Email verification code for %s: %s\n", email, code)
 		return nil
 	}
 
+	// 生產環境：發送郵件
 	subject := "您的验证码 - MagTrade"
 	body := fmt.Sprintf(`
 <!DOCTYPE html>
@@ -79,6 +91,7 @@ func (s *EmailService) SendEmailCode(ctx context.Context, email string) error {
 	return s.sendEmail(email, subject, body)
 }
 
+// VerifyEmailCode 驗證郵件驗證碼
 func (s *EmailService) VerifyEmailCode(ctx context.Context, email, code string) bool {
 	codeKey := fmt.Sprintf("email_code:%s", email)
 	stored, err := s.redis.Get(ctx, codeKey).Result()
@@ -87,12 +100,13 @@ func (s *EmailService) VerifyEmailCode(ctx context.Context, email, code string) 
 	}
 
 	if stored == code {
-		_ = s.redis.Del(ctx, codeKey)
+		_ = s.redis.Del(ctx, codeKey) // 驗證成功後刪除
 		return true
 	}
 	return false
 }
 
+// sendEmail 發送郵件（TLS 連線）
 func (s *EmailService) sendEmail(to, subject, body string) error {
 	if s.cfg == nil {
 		return nil
@@ -109,6 +123,7 @@ func (s *EmailService) sendEmail(to, subject, body string) error {
 
 	addr := fmt.Sprintf("%s:%d", s.cfg.SMTPHost, s.cfg.SMTPPort)
 
+	// TLS 連線
 	tlsConfig := &tls.Config{
 		ServerName: s.cfg.SMTPHost,
 	}
@@ -125,11 +140,13 @@ func (s *EmailService) sendEmail(to, subject, body string) error {
 	}
 	defer client.Close()
 
+	// 認證
 	auth := smtp.PlainAuth("", s.cfg.SMTPUser, s.cfg.SMTPPassword, s.cfg.SMTPHost)
 	if err := client.Auth(auth); err != nil {
 		return fmt.Errorf("SMTP auth failed: %w", err)
 	}
 
+	// 發送
 	if err := client.Mail(from); err != nil {
 		return fmt.Errorf("SMTP MAIL command failed: %w", err)
 	}
@@ -156,6 +173,7 @@ func (s *EmailService) sendEmail(to, subject, body string) error {
 	return client.Quit()
 }
 
+// generateCode 生成隨機數字驗證碼
 func (s *EmailService) generateCode(length int) string {
 	const digits = "0123456789"
 	b := make([]byte, length)

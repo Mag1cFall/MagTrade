@@ -1,3 +1,8 @@
+// AI 服務 HTTP 處理器
+//
+// 本檔案處理 AI 相關請求
+// 包含：智慧客服對話（含串流）、對話歷史、秒殺策略分析
+// 整合 LLMClient 進行大語言模型調用
 package handler
 
 import (
@@ -14,9 +19,10 @@ import (
 	"go.uber.org/zap"
 )
 
+// AIHandler AI 處理器
 type AIHandler struct {
-	customerService *ai.CustomerService
-	strategyAdvisor *ai.StrategyAdvisor
+	customerService *ai.CustomerService // 智慧客服
+	strategyAdvisor *ai.StrategyAdvisor // 策略分析
 	log             *zap.Logger
 }
 
@@ -30,6 +36,8 @@ func NewAIHandler(cfg *config.AIConfig, log *zap.Logger) *AIHandler {
 	}
 }
 
+// Chat AI 對話（非串流）
+// POST /api/v1/ai/chat
 func (h *AIHandler) Chat(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -53,6 +61,9 @@ func (h *AIHandler) Chat(c *gin.Context) {
 	response.Success(c, result)
 }
 
+// ChatStream AI 對話（SSE 串流）
+// POST /api/v1/ai/chat/stream
+// 使用 Server-Sent Events 逐字返回 AI 回應
 func (h *AIHandler) ChatStream(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -66,10 +77,11 @@ func (h *AIHandler) ChatStream(c *gin.Context) {
 		return
 	}
 
+	// 設定 SSE Headers
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
-	c.Header("X-Accel-Buffering", "no")
+	c.Header("X-Accel-Buffering", "no") // 禁用 Nginx 緩衝
 
 	flusher, ok := c.Writer.(http.Flusher)
 	if !ok {
@@ -79,7 +91,7 @@ func (h *AIHandler) ChatStream(c *gin.Context) {
 
 	err := h.customerService.ChatStream(c.Request.Context(), userID, &req, func(chunk ai.StreamChunk) error {
 		data, _ := json.Marshal(chunk)
-		_, err := fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+		_, err := fmt.Fprintf(c.Writer, "data: %s\n\n", data) // SSE 格式
 		if err != nil {
 			return err
 		}
@@ -94,6 +106,8 @@ func (h *AIHandler) ChatStream(c *gin.Context) {
 	}
 }
 
+// GetChatHistory 取得對話歷史
+// GET /api/v1/ai/chat/history?session_id=xxx
 func (h *AIHandler) GetChatHistory(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -116,6 +130,8 @@ func (h *AIHandler) GetChatHistory(c *gin.Context) {
 	response.Success(c, gin.H{"history": history})
 }
 
+// ClearChatHistory 清除對話歷史
+// DELETE /api/v1/ai/chat/history?session_id=xxx
 func (h *AIHandler) ClearChatHistory(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -137,6 +153,8 @@ func (h *AIHandler) ClearChatHistory(c *gin.Context) {
 	response.Success(c, nil)
 }
 
+// GetRecommendation 取得秒殺活動 AI 分析建議
+// GET /api/v1/flash-sales/:flash_sale_id/recommendation
 func (h *AIHandler) GetRecommendation(c *gin.Context) {
 	flashSaleID, err := strconv.ParseInt(c.Param("flash_sale_id"), 10, 64)
 	if err != nil {
@@ -154,6 +172,8 @@ func (h *AIHandler) GetRecommendation(c *gin.Context) {
 	response.Success(c, result)
 }
 
+// TriggerAnalysis 觸發秒殺活動分析（管理員專用）
+// POST /api/v1/admin/flash-sales/:flash_sale_id/analyze
 func (h *AIHandler) TriggerAnalysis(c *gin.Context) {
 	flashSaleID, err := strconv.ParseInt(c.Param("flash_sale_id"), 10, 64)
 	if err != nil {

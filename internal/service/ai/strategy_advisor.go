@@ -1,3 +1,8 @@
+// 秒殺策略分析服務
+//
+// 本檔案使用 LLM 分析秒殺活動，提供搶購建議
+// 輸出包含難度評分、成功概率、時機建議
+// 當 LLM 解析失敗時自動 fallback 到規則引擎
 package ai
 
 import (
@@ -11,6 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// 策略分析系統提示詞
 const strategyAnalysisPrompt = `你是一个秒杀活动分析专家。根据提供的活动数据，分析活动热度并给出策略建议。
 
 请严格按照以下JSON格式返回分析结果：
@@ -24,6 +30,7 @@ const strategyAnalysisPrompt = `你是一个秒杀活动分析专家。根据提
 
 只返回JSON，不要有其他内容。`
 
+// StrategyAdvisor 策略分析服務
 type StrategyAdvisor struct {
 	llm           *LLMClient
 	flashSaleRepo *repository.FlashSaleRepository
@@ -42,30 +49,35 @@ func NewStrategyAdvisor(llm *LLMClient, log *zap.Logger) *StrategyAdvisor {
 	}
 }
 
+// StrategyAnalysis LLM 分析結果結構
 type StrategyAnalysis struct {
-	DifficultyScore    int      `json:"difficulty_score"`
-	DifficultyReason   string   `json:"difficulty_reason"`
-	TimingAdvice       string   `json:"timing_advice"`
-	SuccessProbability float64  `json:"success_probability"`
-	Recommendations    []string `json:"recommendations"`
+	DifficultyScore    int      `json:"difficulty_score"`    // 難度分數 1-10
+	DifficultyReason   string   `json:"difficulty_reason"`   // 難度原因
+	TimingAdvice       string   `json:"timing_advice"`       // 時機建議
+	SuccessProbability float64  `json:"success_probability"` // 成功概率 0-1
+	Recommendations    []string `json:"recommendations"`     // 搶購建議列表
 }
 
+// StrategyRecommendation 策略建議回應
 type StrategyRecommendation struct {
 	FlashSaleID int64             `json:"flash_sale_id"`
 	Analysis    *StrategyAnalysis `json:"analysis"`
 }
 
+// AnalyzeFlashSale 分析秒殺活動
 func (s *StrategyAdvisor) AnalyzeFlashSale(ctx context.Context, flashSaleID int64) (*StrategyRecommendation, error) {
 	flashSale, err := s.flashSaleRepo.GetByID(ctx, flashSaleID)
 	if err != nil {
 		return nil, err
 	}
 
+	// 取得即時庫存
 	currentStock, err := s.stockService.GetStock(ctx, flashSaleID)
 	if err != nil {
 		currentStock = flashSale.AvailableStock
 	}
 
+	// 組裝活動資料
 	activityData := map[string]interface{}{
 		"product_name":   flashSale.Product.Name,
 		"original_price": flashSale.Product.OriginalPrice,
@@ -83,21 +95,24 @@ func (s *StrategyAdvisor) AnalyzeFlashSale(ctx context.Context, flashSaleID int6
 	dataJSON, _ := json.Marshal(activityData)
 	userMessage := fmt.Sprintf("请分析以下秒杀活动：\n%s", string(dataJSON))
 
+	// 呼叫 LLM 分析
 	response, err := s.llm.ChatWithSystem(ctx, strategyAnalysisPrompt, userMessage)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get LLM analysis: %w", err)
 	}
 
+	// 解析 LLM 回應
 	var analysis StrategyAnalysis
 	if err := json.Unmarshal([]byte(response), &analysis); err != nil {
 		s.log.Warn("failed to parse LLM response as JSON, using fallback",
 			zap.String("response", response),
 			zap.Error(err),
 		)
-
+		// LLM 回應格式錯誤時使用規則引擎
 		analysis = s.fallbackAnalysis(flashSale, currentStock)
 	}
 
+	// 儲存建議記錄
 	rec := &model.AIRecommendation{
 		FlashSaleID:        flashSaleID,
 		RecommendationType: model.RecommendationTypeTimingAdvice,
@@ -114,9 +129,11 @@ func (s *StrategyAdvisor) AnalyzeFlashSale(ctx context.Context, flashSaleID int6
 	}, nil
 }
 
+// fallbackAnalysis 規則引擎（LLM 解析失敗時使用）
 func (s *StrategyAdvisor) fallbackAnalysis(flashSale *model.FlashSale, currentStock int) StrategyAnalysis {
 	discountRate := (flashSale.Product.OriginalPrice - flashSale.FlashPrice) / flashSale.Product.OriginalPrice * 100
 
+	// 計算難度分數
 	difficultyScore := 5
 	if discountRate > 70 {
 		difficultyScore += 2
@@ -134,6 +151,7 @@ func (s *StrategyAdvisor) fallbackAnalysis(flashSale *model.FlashSale, currentSt
 		difficultyScore = 10
 	}
 
+	// 計算成功概率
 	successProb := float64(currentStock) / float64(flashSale.TotalStock) * 0.5
 	if successProb > 0.5 {
 		successProb = 0.5
@@ -152,6 +170,7 @@ func (s *StrategyAdvisor) fallbackAnalysis(flashSale *model.FlashSale, currentSt
 	}
 }
 
+// GetLatestRecommendation 取得最新的分析建議
 func (s *StrategyAdvisor) GetLatestRecommendation(ctx context.Context, flashSaleID int64) (*model.AIRecommendation, error) {
 	return s.recRepo.GetLatestByType(ctx, flashSaleID, model.RecommendationTypeTimingAdvice)
 }

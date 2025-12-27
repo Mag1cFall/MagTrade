@@ -1,3 +1,8 @@
+// 限流中間件
+//
+// 本檔案使用令牌桶（Token Bucket）算法實現 IP 級別限流
+// IPRateLimiter：全域 IP 限流
+// FlashSaleRateLimiter：秒殺活動專用限流（按 IP+活動ID）
 package middleware
 
 import (
@@ -11,13 +16,16 @@ import (
 	"golang.org/x/time/rate"
 )
 
+// IPRateLimiter IP 限流器
+// 每個 IP 維護獨立的令牌桶
 type IPRateLimiter struct {
-	limiters map[string]*rate.Limiter
-	mu       sync.RWMutex
-	r        rate.Limit
-	b        int
+	limiters map[string]*rate.Limiter // IP → Limiter 映射
+	mu       sync.RWMutex             // 讀寫鎖保護併發訪問
+	r        rate.Limit               // 每秒令牌生成速率
+	b        int                      // 令牌桶容量（允許突發）
 }
 
+// NewIPRateLimiter 建立 IP 限流器
 func NewIPRateLimiter(cfg *config.RateLimitConfig) *IPRateLimiter {
 	return &IPRateLimiter{
 		limiters: make(map[string]*rate.Limiter),
@@ -26,6 +34,7 @@ func NewIPRateLimiter(cfg *config.RateLimitConfig) *IPRateLimiter {
 	}
 }
 
+// GetLimiter 取得指定 IP 的限流器（惰性建立）
 func (l *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 	l.mu.RLock()
 	limiter, exists := l.limiters[ip]
@@ -35,6 +44,7 @@ func (l *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 		return limiter
 	}
 
+	// Double-check 模式防止重複建立
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -47,18 +57,20 @@ func (l *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 	return limiter
 }
 
+// Cleanup 清理所有限流器（定期調用防止記憶體洩漏）
 func (l *IPRateLimiter) Cleanup() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.limiters = make(map[string]*rate.Limiter)
 }
 
+// RateLimit 全域 IP 限流中間件
 func RateLimit(limiter *IPRateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
 		l := limiter.GetLimiter(ip)
 
-		if !l.Allow() {
+		if !l.Allow() { // 嘗試取令牌，無令牌則拒絕
 			response.TooManyRequests(c, "rate limit exceeded")
 			c.Abort()
 			return
@@ -68,6 +80,8 @@ func RateLimit(limiter *IPRateLimiter) gin.HandlerFunc {
 	}
 }
 
+// FlashSaleRateLimiter 秒殺專用限流器
+// 按「IP + 活動ID」組合限流，每秒最多 10 次請求
 type FlashSaleRateLimiter struct {
 	limiters map[string]*rate.Limiter
 	mu       sync.RWMutex
@@ -79,6 +93,7 @@ func NewFlashSaleRateLimiter() *FlashSaleRateLimiter {
 	}
 }
 
+// GetLimiter 取得「IP:活動ID」組合的限流器
 func (l *FlashSaleRateLimiter) GetLimiter(key string) *rate.Limiter {
 	l.mu.RLock()
 	limiter, exists := l.limiters[key]
@@ -93,18 +108,19 @@ func (l *FlashSaleRateLimiter) GetLimiter(key string) *rate.Limiter {
 
 	limiter, exists = l.limiters[key]
 	if !exists {
-		limiter = rate.NewLimiter(rate.Every(time.Second), 10)
+		limiter = rate.NewLimiter(rate.Every(time.Second), 10) // 每秒 10 次
 		l.limiters[key] = limiter
 	}
 
 	return limiter
 }
 
+// FlashSaleRateLimit 秒殺限流中間件
 func FlashSaleRateLimit(limiter *FlashSaleRateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
 		flashSaleID := c.Param("id")
-		key := ip + ":" + flashSaleID
+		key := ip + ":" + flashSaleID // 組合 Key
 
 		l := limiter.GetLimiter(key)
 
