@@ -22,9 +22,14 @@
                 </div>
               </div>
             </div>
-            <button @click="isOpen = false" class="text-secondary hover:text-white">
-              <X class="w-5 h-5" />
-            </button>
+            <div class="flex items-center gap-2">
+              <button @click="clearChat" class="text-secondary hover:text-accent p-1" title="清空对话">
+                <Trash2 class="w-4 h-4" />
+              </button>
+              <button @click="isOpen = false" class="text-secondary hover:text-white p-1">
+                <X class="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div ref="messagesRef" class="flex-grow overflow-y-auto p-4 space-y-4">
@@ -94,7 +99,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
-import { Bot, X, Send, Loader2 } from 'lucide-vue-next'
+import { Bot, X, Send, Loader2, Trash2 } from 'lucide-vue-next'
 import { sendChatMessageStream } from '@/api/ai'
 import { useAuthStore } from '@/stores/auth'
 import { marked } from 'marked'
@@ -178,6 +183,13 @@ const sendMessage = async () => {
     isLoading.value = false
     messages.value[messages.value.length - 1].thinking = false
   }
+}
+
+const clearChat = () => {
+  sessionId.value = `session_${Date.now()}`
+  messages.value = [
+    { role: 'assistant', content: 'Hi! I\'m your AI shopping assistant. Ask me about flash sales, product recommendations, or trading strategies!' }
+  ]
 }
 </script>
 

@@ -35,11 +35,8 @@ defineProps<{
 defineEmits(['update:modelValue']);
 
 const filters: Filter[] = [
-  { id: 'all', label: '全部' },
-  { id: 'digital', label: '数码' },
-  { id: 'electronics', label: '电子' },
-  { id: 'home', label: '生活' },
-  { id: 'luxury', label: '奢品' }
+  { id: 'active', label: '进行中' },
+  { id: 'upcoming', label: '即将开始' },
 ];
 </script>
 

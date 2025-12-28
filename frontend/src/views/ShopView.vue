@@ -14,7 +14,8 @@
         </div>
         
         <div class="flex flex-col items-end gap-4 w-full lg:w-auto">
-          <div class="relative group w-full lg:w-80">
+          <!-- 搜索框 -->
+          <div class="relative group w-full lg:w-64">
             <input 
               v-model="searchQuery"
               type="text"
@@ -22,6 +23,21 @@
               class="w-full bg-transparent border-b border-white/10 py-2 px-0 text-white placeholder-gray-700 focus:border-accent focus:outline-none transition-all text-sm"
             />
             <Search class="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700 group-focus-within:text-accent transition-colors" />
+          </div>
+          <!-- 过滤和排序 -->
+          <div class="flex items-center gap-3">
+            <select v-model="statusFilter" class="bg-black border border-white/10 text-white text-xs px-3 py-2 rounded focus:border-accent outline-none">
+              <option value="all">全部状态</option>
+              <option value="active">进行中</option>
+              <option value="upcoming">即将开始</option>
+            </select>
+            <select v-model="sortBy" class="bg-black border border-white/10 text-white text-xs px-3 py-2 rounded focus:border-accent outline-none">
+              <option value="default">默认排序</option>
+              <option value="price-asc">价格从低到高</option>
+              <option value="price-desc">价格从高到低</option>
+              <option value="discount">折扣力度</option>
+              <option value="stock">剩余库存</option>
+            </select>
           </div>
         </div>
       </div>
@@ -43,7 +59,8 @@
         <div 
           v-for="item in filteredFlashSales" 
           :key="item.id"
-          class="group relative"
+          class="group relative cursor-pointer"
+          @click="goToDetail(item.id)"
         >
           <FlowBorderCard 
             :active="item.status === 1" 
@@ -71,7 +88,7 @@
 
               <div class="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-20 bg-black/70 backdrop-blur-xl border-t border-white/10">
                  <button 
-                  @click="handleRush(item)"
+                  @click.stop="handleRush(item)"
                   :disabled="rushing || item.status !== 1"
                   class="w-full h-10 bg-accent text-white text-xs font-bold uppercase hover:bg-white hover:text-black transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -139,6 +156,8 @@ const authStore = useAuthStore()
 const loading = ref(true)
 const flashSales = ref<FlashSale[]>([])
 const searchQuery = ref('')
+const statusFilter = ref<'all' | 'active' | 'upcoming'>('all')
+const sortBy = ref<'default' | 'price-asc' | 'price-desc' | 'discount' | 'stock'>('default')
 const rushing = ref(false)
 const showRushResult = ref(false)
 const rushSuccess = ref(false)
@@ -160,22 +179,55 @@ const calculateDiscount = (item: FlashSale) => {
   return Math.round((1 - item.flash_price / item.product.original_price) * 100)
 }
 
+const goToDetail = (id: number) => {
+  router.push(`/flash-sales/${id}`)
+}
+
 const filteredFlashSales = computed(() => {
-  if (!searchQuery.value) return flashSales.value
-  const q = searchQuery.value.toLowerCase()
-  return flashSales.value.filter(item => 
-    item.product?.name?.toLowerCase().includes(q) ||
-    item.product?.description?.toLowerCase().includes(q)
-  )
+  let result = flashSales.value
+  
+  // 状态过滤
+  if (statusFilter.value === 'active') {
+    result = result.filter(item => item.status === 1)
+  } else if (statusFilter.value === 'upcoming') {
+    result = result.filter(item => item.status === 0)
+  }
+  
+  // 搜索过滤
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    result = result.filter(item => 
+      item.product?.name?.toLowerCase().includes(q) ||
+      item.product?.description?.toLowerCase().includes(q)
+    )
+  }
+  
+  // 排序
+  if (sortBy.value === 'price-asc') {
+    result = [...result].sort((a, b) => a.flash_price - b.flash_price)
+  } else if (sortBy.value === 'price-desc') {
+    result = [...result].sort((a, b) => b.flash_price - a.flash_price)
+  } else if (sortBy.value === 'discount') {
+    result = [...result].sort((a, b) => calculateDiscount(b) - calculateDiscount(a))
+  } else if (sortBy.value === 'stock') {
+    result = [...result].sort((a, b) => b.available_stock - a.available_stock)
+  }
+  
+  return result
 })
 
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await getFlashSales(1, 100, 1)
-    if (res.code === 0) {
-      flashSales.value = res.data.flash_sales || []
-    }
+    // 获取进行中和即将开始的活动
+    const [activeRes, upcomingRes] = await Promise.all([
+      getFlashSales(1, 100, 1),
+      getFlashSales(1, 100, 0)
+    ])
+    const active = activeRes.code === 0 ? (activeRes.data.flash_sales || []) : []
+    const upcoming = upcomingRes.code === 0 ? (upcomingRes.data.flash_sales || []) : []
+    // 合并：进行中的排前面
+    flashSales.value = [...active, ...upcoming]
   } catch (e) {
     console.error(e)
   } finally {

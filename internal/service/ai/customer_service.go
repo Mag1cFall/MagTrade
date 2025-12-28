@@ -32,6 +32,7 @@ type CustomerService struct {
 	chatRepo      *repository.ChatHistoryRepository
 	flashSaleRepo *repository.FlashSaleRepository
 	orderRepo     *repository.OrderRepository
+	userRepo      *repository.UserRepository
 	stockService  *cache.StockService
 	log           *zap.Logger
 }
@@ -42,6 +43,7 @@ func NewCustomerService(llm *LLMClient, log *zap.Logger) *CustomerService {
 		chatRepo:      repository.NewChatHistoryRepository(),
 		flashSaleRepo: repository.NewFlashSaleRepository(),
 		orderRepo:     repository.NewOrderRepository(),
+		userRepo:      repository.NewUserRepository(),
 		stockService:  cache.NewStockService(),
 		log:           log,
 	}
@@ -181,10 +183,24 @@ func (s *CustomerService) ChatStream(ctx context.Context, userID int64, req *Cha
 	return nil
 }
 
-// gatherContext 蒐集上下文資訊（活動、訂單）
+// gatherContext 蒐集上下文資訊（用戶、活動、訂單）
 func (s *CustomerService) gatherContext(ctx context.Context, userID int64, message string) (string, map[string]interface{}) {
 	var contextParts []string
 	relatedData := make(map[string]interface{})
+
+	// 用戶信息
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err == nil && user != nil {
+		userInfo := map[string]interface{}{
+			"username":   user.Username,
+			"email":      user.Email,
+			"role":       user.Role,
+			"created_at": user.CreatedAt.Format("2006-01-02"),
+		}
+		data, _ := json.Marshal(userInfo)
+		contextParts = append(contextParts, fmt.Sprintf("当前用户信息：%s", string(data)))
+		relatedData["user_info"] = userInfo
+	}
 
 	// 進行中的秒殺活動
 	activeFlashSales, err := s.flashSaleRepo.ListActive(ctx)

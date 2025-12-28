@@ -4,6 +4,7 @@ import { getOrders, payOrder, cancelOrder } from '@/api/order'
 import type { Order } from '@/types'
 import SmartImage from '@/components/SmartImage.vue'
 import BaseModal from '@/components/BaseModal.vue'
+import PaymentModal from '@/components/PaymentModal.vue'
 import { Loader2, Package, XCircle, CheckCircle, Clock, AlertCircle, Ban } from 'lucide-vue-next'
 
 const loading = ref(true)
@@ -14,6 +15,8 @@ const actionLoading = ref<string | null>(null)
 const showPayModal = ref(false)
 const showCancelModal = ref(false)
 const selectedOrderNo = ref('')
+const selectedAmount = ref(0)
+const selectedProductName = ref('')
 const modalMessage = ref('')
 
 const fetchData = async () => {
@@ -31,9 +34,10 @@ const fetchData = async () => {
   }
 }
 
-const openPayModal = (orderNo: string, amount: number) => {
-  selectedOrderNo.value = orderNo
-  modalMessage.value = `Confirm payment of ¥${amount.toFixed(2)} for order ${orderNo}?`
+const openPayModal = (order: Order) => {
+  selectedOrderNo.value = order.order_no
+  selectedAmount.value = order.amount
+  selectedProductName.value = order.flash_sale?.product?.name || 'Unknown Product'
   showPayModal.value = true
 }
 
@@ -161,7 +165,7 @@ onMounted(() => {
                 <Ban class="w-5 h-5" />
               </button>
               <button 
-                @click="openPayModal(order.order_no, order.amount)"
+                @click="openPayModal(order)"
                 :disabled="!!actionLoading"
                 class="px-6 py-3 bg-white text-black text-sm font-bold hover:bg-accent hover:text-white transition-all duration-300 disabled:opacity-50 flex items-center gap-2 uppercase tracking-widest"
               >
@@ -174,11 +178,11 @@ onMounted(() => {
       </div>
     </div>
 
-    <BaseModal
+    <PaymentModal
       :show="showPayModal"
-      title="Confirm Payment"
-      :message="modalMessage"
-      confirm-text="Pay Now"
+      :order-no="selectedOrderNo"
+      :amount="selectedAmount"
+      :product-name="selectedProductName"
       @confirm="confirmPay"
       @cancel="showPayModal = false"
     />

@@ -132,7 +132,7 @@ docker-compose -f docker/docker-compose.dev.yml up -d
 ### 开发环境
 | 用户名 | 密码 | 角色 |
 |--------|------|------|
-| admin | admin123 | 管理员 |
+| admin | mag1cfall1337 | 管理员 |
 
 ### 生产环境
 首次启动时通过环境变量 `ADMIN_INIT_PASSWORD` 设置admin密码。

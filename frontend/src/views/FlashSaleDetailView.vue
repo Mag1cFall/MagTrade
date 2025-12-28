@@ -43,21 +43,23 @@ const fetchData = async () => {
       currentStock.value = res.data.current_stock
     }
 
-    if (authStore.isAuthenticated) {
-      getRecommendation(flashSaleId).then(res => {
-        if (res.code === 0) {
-          const { analysis } = res.data
-          aiAnalysis.value = {
-            difficulty: analysis.difficulty_score,
-            winRate: (analysis.success_probability * 100).toFixed(1) + '%',
-            advice: analysis.timing_advice,
-            risk: analysis.difficulty_reason
-          }
+    // 无论是否登录都尝试获取 AI 分析
+    getRecommendation(flashSaleId).then(res => {
+      if (res.code === 0 && res.data?.analysis) {
+        const { analysis } = res.data
+        aiAnalysis.value = {
+          difficulty: analysis.difficulty_score || 0,
+          winRate: ((analysis.success_probability || 0) * 100).toFixed(1) + '%',
+          advice: analysis.timing_advice || 'Analysis complete',
+          risk: analysis.difficulty_reason || 'NORMAL'
         }
-      }).catch(() => {
-        aiAnalysis.value.advice = 'AI SERVICE OFFLINE'
-      })
-    }
+      } else {
+        aiAnalysis.value.advice = res.message || 'AI analysis unavailable'
+      }
+    }).catch((e) => {
+      console.error('AI Recommendation Error:', e)
+      aiAnalysis.value.advice = 'AI SERVICE TEMPORARILY UNAVAILABLE'
+    })
   } catch (e) {
     console.error(e)
   } finally {
@@ -143,7 +145,17 @@ const handleRush = async () => {
   } catch (e: any) {
     rushLoading.value = false
     rushStatus.value = 'failed'
-    showModal('SYSTEM ERROR', e.message || 'Network Error', 'danger')
+    // 解析错误消息
+    const status = e.response?.status
+    const serverMsg = e.response?.data?.message || e.message || 'Network Error'
+    
+    if (status === 409) {
+      showModal('已参与过活动', '每人限购一次，您已经抢购过此商品', 'danger')
+    } else if (status === 400) {
+      showModal('抢购失败', serverMsg, 'danger')
+    } else {
+      showModal('系统错误', serverMsg, 'danger')
+    }
   }
 }
 
@@ -179,6 +191,11 @@ const isEnded = computed(() => {
   const end = new Date(detail.value.flash_sale.end_time).getTime()
   return now >= end
 })
+
+const handleCountdownFinish = () => {
+  // 倒计时结束，刷新数据获取最新状态
+  fetchData()
+}
 </script>
 
 <template>
@@ -195,8 +212,8 @@ const isEnded = computed(() => {
 
   <div v-else class="min-h-screen pb-32 lg:pb-20">
     <!-- Breadcrumb -->
-    <div class="py-6 border-b border-white/5 sticky top-[72px] z-30 bg-background/95 backdrop-blur-sm">
-      <button @click="router.push('/')" class="text-sm text-secondary hover:text-white flex items-center gap-2 uppercase tracking-widest font-bold">
+    <div class="container mx-auto px-4 md:px-8 py-4 mt-20 relative z-20">
+      <button @click="router.push('/')" class="text-sm text-secondary hover:text-white flex items-center gap-2 uppercase tracking-widest font-bold cursor-pointer">
         <ArrowLeft class="w-4 h-4" /> Back to Lobby
       </button>
     </div>
@@ -285,7 +302,7 @@ const isEnded = computed(() => {
             
             <div v-if="!isStarted" class="p-4 bg-surface border border-white/10 flex items-center justify-between">
               <span class="text-sm font-bold text-white uppercase tracking-widest">Dropping In</span>
-              <CountDown :target-time="detail.flash_sale.start_time" size="md" />
+              <CountDown :target-time="detail.flash_sale.start_time" size="md" @finish="handleCountdownFinish" />
             </div>
           </div>
 

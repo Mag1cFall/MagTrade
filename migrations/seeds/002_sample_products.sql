@@ -1,8 +1,9 @@
 -- ============================================================
 -- MagTrade 種子資料 - 示範商品
 -- 類型: Seed（測試資料）
--- 環境: 僅開發環境
+-- 環境: 開發環境，僅供演示
 -- 說明: 提供基礎商品用於功能測試
+-- 執行: docker cp migrations/seeds/002_sample_products.sql mt-postgres:/tmp/ && docker exec mt-postgres psql -U postgres -d magtrade -f /tmp/002_sample_products.sql
 -- ============================================================
 
 -- 基礎測試商品（Apple 系列）

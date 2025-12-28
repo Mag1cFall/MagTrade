@@ -71,6 +71,21 @@ func (s *StrategyAdvisor) AnalyzeFlashSale(ctx context.Context, flashSaleID int6
 		return nil, err
 	}
 
+	// 檢查 Product 是否正確載入
+	if flashSale.Product == nil {
+		s.log.Warn("flash sale product is nil, using fallback", zap.Int64("flash_sale_id", flashSaleID))
+		return &StrategyRecommendation{
+			FlashSaleID: flashSaleID,
+			Analysis: &StrategyAnalysis{
+				DifficultyScore:    5,
+				DifficultyReason:   "商品信息暂不可用",
+				TimingAdvice:       "建议在活动开始前30秒进入页面",
+				SuccessProbability: 0.3,
+				Recommendations:    []string{"确保网络稳定", "提前登录账户"},
+			},
+		}, nil
+	}
+
 	// 取得即時庫存
 	currentStock, err := s.stockService.GetStock(ctx, flashSaleID)
 	if err != nil {

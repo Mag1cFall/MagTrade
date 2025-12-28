@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { createProduct, createFlashSale } from '@/api/admin'
 import { uploadImage } from '@/api/upload'
 import { getProducts } from '@/api/product'
+import { sendChatMessage } from '@/api/ai'
 import type { Product } from '@/types'
-import { Loader2, Plus, Package, Zap, RefreshCw, Upload, Sparkles, BrainCircuit } from 'lucide-vue-next'
+import { Loader2, Plus, Package, Zap, RefreshCw, Upload, Sparkles, BrainCircuit, X, Search } from 'lucide-vue-next'
 
 const activeTab = ref<'product' | 'flash_sale'>('product')
 const products = ref<Product[]>([])
@@ -14,6 +15,37 @@ const generatingFlashAI = ref(false)
 const message = ref('')
 const messageType = ref<'success' | 'error'>('success')
 const uploadingImage = ref(false)
+
+const showProductModal = ref(false)
+const productSearchQuery = ref('')
+const aiLogs = ref<string[]>([])
+
+const addAILog = (log: string) => {
+  aiLogs.value.push(`[${new Date().toLocaleTimeString()}] ${log}`)
+}
+
+const sortedProducts = computed(() => {
+  return [...products.value].sort((a, b) => a.id - b.id)
+})
+
+const filteredProducts = computed(() => {
+  if (!productSearchQuery.value) return sortedProducts.value
+  const q = productSearchQuery.value.toLowerCase()
+  return sortedProducts.value.filter(p => 
+    p.name.toLowerCase().includes(q) || 
+    p.id.toString().includes(q)
+  )
+})
+
+const selectedProduct = computed(() => {
+  return products.value.find(p => p.id === flashSaleForm.value.product_id)
+})
+
+const selectProduct = (p: Product) => {
+  flashSaleForm.value.product_id = p.id
+  showProductModal.value = false
+  productSearchQuery.value = ''
+}
 
 const generateAIContent = async () => {
   if (!productForm.value.name) {
@@ -54,20 +86,76 @@ const generateFlashAI = async () => {
     showMessage('Select a base product first', 'error')
     return
   }
+  const selectedProd = products.value.find(p => p.id === flashSaleForm.value.product_id)
+  if (!selectedProd) return
+
+  aiLogs.value = []
   generatingFlashAI.value = true
+  
   try {
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    const selectedProd = products.value.find(p => p.id === flashSaleForm.value.product_id)
-    if (selectedProd) {
-      flashSaleForm.value.flash_price = Math.round(selectedProd.original_price * 0.01 * 100) / 100 || 0.01
-      flashSaleForm.value.total_stock = Math.floor(Math.random() * 50) + 10
-      const now = new Date()
-      now.setMinutes(now.getMinutes() + 5)
-      flashSaleForm.value.start_time = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
-      now.setHours(now.getHours() + 1)
-      flashSaleForm.value.end_time = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
-      showMessage('Optimized flash parameters set', 'success')
+    addAILog('INIT: Neural link established')
+    addAILog(`TARGET: ${selectedProd.name} (¥${selectedProd.original_price})`)
+    
+    const prompt = `你是秒杀活动策略专家。根据以下商品信息，生成最佳秒杀参数。
+
+商品信息：
+- 名称：${selectedProd.name}
+- 原价：¥${selectedProd.original_price}
+- 描述：${selectedProd.description || '无'}
+
+请直接输出 JSON 格式（不要用 markdown 代码块），包含：
+{
+  "flash_price": 秒杀价格（数字，建议为原价的30%-70%），
+  "total_stock": 秒杀库存（整数，根据商品热度建议10-200），
+  "per_user_limit": 每人限购（整数，1-5），
+  "duration_hours": 活动时长（整数，1-24小时），
+  "reason": "简短解释定价策略（中文，20字内）"
+}`
+
+    addAILog('UPLINK: Sending to AI cluster...')
+    const res = await sendChatMessage(`admin-flash-${Date.now()}`, prompt)
+    
+    if (res.code === 0 && res.data?.response) {
+      addAILog('RECV: Response received, parsing...')
+      const text = res.data.response
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0])
+        addAILog(`PARSE: flash_price=¥${parsed.flash_price}`)
+        addAILog(`PARSE: stock=${parsed.total_stock}, limit=${parsed.per_user_limit}`)
+        
+        flashSaleForm.value.flash_price = Number(parsed.flash_price) || selectedProd.original_price * 0.5
+        flashSaleForm.value.total_stock = Number(parsed.total_stock) || 50
+        flashSaleForm.value.per_user_limit = Number(parsed.per_user_limit) || 1
+        
+        const durationHours = Number(parsed.duration_hours) || 1
+        const now = new Date()
+        now.setMinutes(now.getMinutes() + 5)
+        flashSaleForm.value.start_time = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+        now.setHours(now.getHours() + durationHours)
+        flashSaleForm.value.end_time = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+        
+        addAILog(`DONE: ${parsed.reason || 'Optimization complete'}`)
+        showMessage(parsed.reason || 'AI 优化完成', 'success')
+      } else {
+        throw new Error('AI 响应格式错误')
+      }
+    } else {
+      throw new Error(res.message || 'AI 请求失败')
     }
+  } catch (e: any) {
+    addAILog(`ERROR: ${e.message}`)
+    addAILog('FALLBACK: Using local algorithm...')
+    showMessage(`AI 失败: ${e.message}`, 'error')
+    flashSaleForm.value.flash_price = Math.round(selectedProd.original_price * 0.5 * 100) / 100
+    flashSaleForm.value.total_stock = 50
+    const now = new Date()
+    now.setMinutes(now.getMinutes() + 5)
+    flashSaleForm.value.start_time = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+    now.setHours(now.getHours() + 1)
+    flashSaleForm.value.end_time = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+    addAILog('DONE: Fallback complete')
   } finally {
     generatingFlashAI.value = false
   }
@@ -318,13 +406,23 @@ const handleCreateFlashSale = async () => {
                   <RefreshCw class="w-3 h-3" /> Re-sync List
                 </button>
               </div>
-              <div class="relative">
-                <select v-model.number="flashSaleForm.product_id" required class="w-full bg-black border border-white/10 px-5 py-4 text-white focus:border-accent outline-none appearance-none cursor-pointer font-mono text-sm">
-                  <option :value="0" disabled>NULL_SELECTION</option>
-                  <option v-for="p in products" :key="p.id" :value="p.id">ID:{{ p.id }} // {{ p.name }} (Original: ¥{{ p.original_price }})</option>
-                </select>
-                <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-accent text-xs">▼</div>
-              </div>
+              <button 
+                type="button" 
+                @click="showProductModal = true"
+                class="w-full bg-black border border-white/10 px-5 py-4 text-left hover:border-accent/50 transition-all group"
+              >
+                <div v-if="selectedProduct" class="flex items-center justify-between">
+                  <span class="font-mono text-sm text-white">
+                    ID:{{ selectedProduct.id }} // {{ selectedProduct.name }}
+                  </span>
+                  <span class="text-accent text-xs font-bold">¥{{ selectedProduct.original_price }}</span>
+                </div>
+                <div v-else class="flex items-center justify-between text-tertiary">
+                  <span class="font-mono text-sm">SELECT_TARGET_ASSET...</span>
+                  <span class="text-accent text-xs">▼</span>
+                </div>
+              </button>
+              <input type="hidden" :value="flashSaleForm.product_id" required />
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
@@ -360,6 +458,31 @@ const handleCreateFlashSale = async () => {
               <label class="text-[10px] text-secondary uppercase font-black tracking-[0.3em]">Entity Acquisition Limit</label>
               <input v-model.number="flashSaleForm.per_user_limit" type="number" min="1" required class="w-full bg-black border border-white/10 px-5 py-4 text-white focus:border-accent outline-none font-mono" />
             </div>
+
+            <!-- AI 日志显示 -->
+            <transition name="fade">
+              <div v-if="generatingFlashAI || aiLogs.length > 0" class="mt-6 border border-white/10 bg-black/60 overflow-hidden">
+                <div class="flex items-center gap-3 px-4 py-2 border-b border-white/5 bg-white/5">
+                  <div class="flex gap-1">
+                    <span class="w-2 h-2 rounded-full" :class="generatingFlashAI ? 'bg-accent animate-pulse' : 'bg-green-500'"></span>
+                    <span class="w-2 h-2 rounded-full bg-yellow-500/50"></span>
+                    <span class="w-2 h-2 rounded-full bg-white/20"></span>
+                  </div>
+                  <span class="text-[9px] text-tertiary font-mono uppercase tracking-widest">Neural_Process_Log</span>
+                  <div v-if="generatingFlashAI" class="flex-1 h-1 bg-white/10 ml-4 overflow-hidden">
+                    <div class="h-full bg-accent animate-[progress_1.5s_ease-in-out_infinite]"></div>
+                  </div>
+                </div>
+                <div class="p-3 max-h-32 overflow-y-auto font-mono text-[10px] leading-relaxed">
+                  <div v-for="(log, i) in aiLogs" :key="i" class="text-tertiary">
+                    <span class="text-accent/60">>&nbsp;</span>{{ log }}
+                  </div>
+                  <div v-if="generatingFlashAI" class="text-accent animate-pulse">
+                    <span class="text-accent/60">>&nbsp;</span>Processing<span class="animate-[blink_1s_infinite]">_</span>
+                  </div>
+                </div>
+              </div>
+            </transition>
           </div>
 
           <button type="submit" :disabled="loading" class="w-full h-16 bg-accent text-white font-black uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-all flex items-center justify-center gap-4 text-lg">
@@ -370,6 +493,67 @@ const handleCreateFlashSale = async () => {
         </form>
       </div>
     </div>
+
+    <!-- 商品选择弹窗 -->
+    <teleport to="body">
+      <transition name="fade">
+        <div v-if="showProductModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showProductModal = false"></div>
+          <div class="relative w-full max-w-2xl max-h-[80vh] bg-surface border border-white/10 shadow-2xl flex flex-col">
+            <!-- 弹窗头部 -->
+            <div class="flex items-center justify-between p-6 border-b border-white/5">
+              <div>
+                <h3 class="text-lg font-black text-white uppercase tracking-widest">Select Target Asset</h3>
+                <p class="text-[10px] text-tertiary font-mono mt-1">{{ filteredProducts.length }} assets available</p>
+              </div>
+              <button @click="showProductModal = false" class="p-2 hover:bg-white/10 transition-colors">
+                <X class="w-5 h-5 text-secondary" />
+              </button>
+            </div>
+            
+            <!-- 搜索框 -->
+            <div class="p-4 border-b border-white/5">
+              <div class="relative">
+                <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary" />
+                <input 
+                  v-model="productSearchQuery"
+                  type="text"
+                  placeholder="SEARCH_BY_ID_OR_NAME..."
+                  class="w-full bg-black border border-white/10 pl-12 pr-4 py-3 text-white focus:border-accent outline-none font-mono text-sm"
+                />
+              </div>
+            </div>
+            
+            <!-- 商品列表 -->
+            <div class="flex-1 overflow-y-auto p-2">
+              <div v-if="filteredProducts.length === 0" class="p-8 text-center text-tertiary font-mono text-sm">
+                NO_MATCHING_ASSETS_FOUND
+              </div>
+              <button
+                v-for="p in filteredProducts"
+                :key="p.id"
+                type="button"
+                @click="selectProduct(p)"
+                :class="[
+                  'w-full px-4 py-3 text-left transition-all flex items-center justify-between gap-4 border-b border-white/5 last:border-0',
+                  flashSaleForm.product_id === p.id 
+                    ? 'bg-accent/10 border-l-2 border-l-accent' 
+                    : 'hover:bg-white/5'
+                ]"
+              >
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-3">
+                    <span class="text-accent font-mono text-xs">ID:{{ p.id }}</span>
+                    <span class="text-white font-medium truncate">{{ p.name }}</span>
+                  </div>
+                </div>
+                <span class="text-secondary font-mono text-sm whitespace-nowrap">¥{{ p.original_price }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </teleport>
   </div>
 </template>
 
@@ -377,4 +561,15 @@ const handleCreateFlashSale = async () => {
 .fade-enter-active, .fade-leave-active { transition: opacity 0.4s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 input::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+
+@keyframes progress {
+  0% { width: 0%; margin-left: 0%; }
+  50% { width: 30%; margin-left: 35%; }
+  100% { width: 0%; margin-left: 100%; }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
 </style>

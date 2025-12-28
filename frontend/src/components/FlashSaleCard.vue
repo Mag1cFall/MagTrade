@@ -10,7 +10,7 @@
     <div class="relative h-full flex flex-col bg-surface overflow-hidden rounded-[10px]">
       <!-- Image Area -->
       <div class="relative h-64 overflow-hidden bg-gray-900">
-        <img :src="item?.image || '/placeholder.png'" :alt="item?.name" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+        <img :src="item?.product?.image_url || '/placeholder.png'" :alt="item?.product?.name" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
         
         <!-- Status Badge -->
         <div class="absolute top-2 right-2 px-2 py-1 bg-black/70 backdrop-blur-md rounded text-xs font-mono text-white border border-white/10 z-10">
@@ -30,17 +30,13 @@
       <!-- Content Area -->
       <div class="p-4 flex flex-col flex-grow">
         <div class="flex justify-between items-start mb-2">
-          <h3 class="text-lg font-bold text-white line-clamp-1 group-hover:text-accent transition-colors">{{ item?.name }}</h3>
-          <span v-if="item?.discount" class="text-xs font-bold text-accent bg-accent/10 px-2 py-1 rounded">-{{ item.discount }}%</span>
+          <h3 class="text-lg font-bold text-white line-clamp-1 group-hover:text-accent transition-colors">{{ item?.product?.name }}</h3>
+          <span v-if="discount > 0" class="text-xs font-bold text-accent bg-accent/10 px-2 py-1 rounded">-{{ discount }}%</span>
         </div>
         
         <div class="flex items-baseline gap-2 mb-4">
-          <span class="text-2xl font-bold text-white">${{ item?.price }}</span>
-          <span v-if="item?.original_price" class="text-sm text-gray-500 line-through decoration-white/20">${{ item.original_price }}</span>
-          <!-- Fallback calc if original_price not present but discount is -->
-          <span v-else-if="item?.price && item?.discount" class="text-sm text-gray-500 line-through decoration-white/20">
-             ${{ (item.price * 100 / (100 - item.discount)).toFixed(0) }}
-          </span>
+          <span class="text-2xl font-bold text-white">¥{{ item?.flash_price }}</span>
+          <span v-if="item?.product?.original_price" class="text-sm text-gray-500 line-through decoration-white/20">¥{{ item.product.original_price }}</span>
         </div>
 
         <div class="space-y-2 mt-auto">
@@ -83,7 +79,7 @@ const router = useRouter()
 
 const goToDetail = () => {
   if (props.item?.id) {
-    router.push(`/sale/${props.item.id}`)
+    router.push(`/flash-sales/${props.item.id}`)
   }
 }
 
@@ -105,5 +101,10 @@ const progress = computed(() => {
   if (!props.item?.total_stock) return 0
   const sold = props.item.total_stock - props.item.available_stock
   return Math.round((sold / props.item.total_stock) * 100)
+})
+
+const discount = computed(() => {
+  if (!props.item?.product?.original_price || !props.item?.flash_price) return 0
+  return Math.round((1 - props.item.flash_price / props.item.product.original_price) * 100)
 })
 </script>

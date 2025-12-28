@@ -1,8 +1,9 @@
 -- ============================================================
 -- MagTrade 種子資料 - 賽博龐克商品（擴展）
 -- 類型: Seed（展示資料）
--- 環境: 僅開發環境
+-- 環境: 開發環境，僅供演示
 -- 說明: 50件虛構科技商品，用於壓測和 UI 展示
+-- 執行: docker cp migrations/seeds/003_cyberpunk_products.sql mt-postgres:/tmp/ && docker exec mt-postgres psql -U postgres -d magtrade -f /tmp/003_cyberpunk_products.sql
 -- ============================================================
 
 INSERT INTO products (name, description, original_price, image_url, status) VALUES
