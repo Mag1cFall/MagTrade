@@ -4,7 +4,7 @@
 const COLORS = {
   stroke: '#333333',
   fill: '#1A1A1A',
-  accent: '#FF3B30'
+  accent: '#FF3B30',
 }
 
 const PHONE_SVG = `
@@ -43,10 +43,19 @@ const BOX_SVG = `
 export const getSvgByType = (type: string): string => {
   let svg = BOX_SVG
   switch (type) {
-    case 'phone': svg = PHONE_SVG; break;
-    case 'laptop': svg = LAPTOP_SVG; break;
-    case 'headphone': svg = HEADPHONE_SVG; break;
-    case 'box': default: svg = BOX_SVG; break;
+    case 'phone':
+      svg = PHONE_SVG
+      break
+    case 'laptop':
+      svg = LAPTOP_SVG
+      break
+    case 'headphone':
+      svg = HEADPHONE_SVG
+      break
+    case 'box':
+    default:
+      svg = BOX_SVG
+      break
   }
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
 }
@@ -57,6 +66,6 @@ export const getSvgByProductName = (name: string): string => {
   if (n.includes('phone') || n.includes('手机')) type = 'phone'
   else if (n.includes('mac') || n.includes('laptop') || n.includes('电脑')) type = 'laptop'
   else if (n.includes('pod') || n.includes('headphone') || n.includes('耳机')) type = 'headphone'
-  
+
   return getSvgByType(type)
 }

@@ -24,9 +24,12 @@ const displaySrc = computed(() => {
 const fallbackUrl = computed(() => getSvgByProductName(props.alt))
 
 // 如果 src 变了，重置错误状态
-watch(() => props.src, () => {
-  hasError.value = false
-})
+watch(
+  () => props.src,
+  () => {
+    hasError.value = false
+  }
+)
 
 const handleError = () => {
   if (!isLocal.value) {

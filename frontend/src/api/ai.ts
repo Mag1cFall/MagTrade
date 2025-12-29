@@ -27,7 +27,9 @@ export interface StreamChunk {
 }
 
 export const getRecommendation = (flashSaleId: number) => {
-  return http.get<any, ApiResponse<{ analysis: AIRecommendation }>>(`/ai/recommendations/${flashSaleId}`)
+  return http.get<any, ApiResponse<{ analysis: AIRecommendation }>>(
+    `/ai/recommendations/${flashSaleId}`
+  )
 }
 
 export const sendChatMessage = (sessionId: string, message: string) => {
@@ -44,9 +46,9 @@ export const sendChatMessageStream = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ session_id: sessionId, message })
+    body: JSON.stringify({ session_id: sessionId, message }),
   })
 
   if (!response.ok) {
@@ -74,7 +76,8 @@ export const sendChatMessageStream = async (
         try {
           const data = JSON.parse(line.slice(6)) as StreamChunk
           onChunk(data)
-        } catch (e) {
+        } catch {
+          // Silent fail for JSON parsing
         }
       }
     }
@@ -82,5 +85,7 @@ export const sendChatMessageStream = async (
 }
 
 export const getChatHistory = (sessionId: string) => {
-  return http.get<any, ApiResponse<{ history: any[] }>>(`/ai/chat/history`, { params: { session_id: sessionId } })
+  return http.get<any, ApiResponse<{ history: any[] }>>(`/ai/chat/history`, {
+    params: { session_id: sessionId },
+  })
 }

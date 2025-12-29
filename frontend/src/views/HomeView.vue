@@ -36,9 +36,15 @@ const sections = ['HOME', 'SYSTEM', 'FEATURES', 'MARKET', 'NETWORK', 'SPECS', 'S
 const sectionIds = ['hero', 'stats', 'features', 'market', 'network', 'specs', 'trust', 'faq']
 
 const tickerItems = [
-  'SYSTEM ONLINE', 'LOW LATENCY DETECTED', 'ANTI-BOT PROTECTION ACTIVE',
-  'HIGH-SPEED RPC READY', 'OBSIDIAN ENGINE ENGAGED', 'REAL-TIME SYNC',
-  'SECURE TRANSACTION LAYER', 'AI TACTICAL ANALYSIS', 'GLOBAL NODES: 35+'
+  'SYSTEM ONLINE',
+  'LOW LATENCY DETECTED',
+  'ANTI-BOT PROTECTION ACTIVE',
+  'HIGH-SPEED RPC READY',
+  'OBSIDIAN ENGINE ENGAGED',
+  'REAL-TIME SYNC',
+  'SECURE TRANSACTION LAYER',
+  'AI TACTICAL ANALYSIS',
+  'GLOBAL NODES: 35+',
 ]
 
 const fetchData = async () => {
@@ -75,15 +81,18 @@ let observer: IntersectionObserver | null = null
 
 onMounted(() => {
   fetchData()
-  observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const index = sectionIds.indexOf(entry.target.id)
-        if (index !== -1) currentSectionIndex.value = index
-      }
-    })
-  }, { threshold: 0.5 })
-  sectionIds.forEach(id => {
+  observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const index = sectionIds.indexOf(entry.target.id)
+          if (index !== -1) currentSectionIndex.value = index
+        }
+      })
+    },
+    { threshold: 0.5 }
+  )
+  sectionIds.forEach((id) => {
     const el = document.getElementById(id)
     if (el) observer?.observe(el)
   })
@@ -94,50 +103,74 @@ onUnmounted(() => observer?.disconnect())
 
 <template>
   <div class="min-h-screen bg-background text-primary selection:bg-accent selection:text-white">
-    <VerticalPager :sections="sections" :active-index="currentSectionIndex" @change="scrollToSection" />
+    <VerticalPager
+      :sections="sections"
+      :active-index="currentSectionIndex"
+      @change="scrollToSection"
+    />
 
-    <section id="hero" class="h-[100vh] w-full relative flex flex-col items-center justify-center overflow-hidden border-b border-white/5">
+    <section
+      id="hero"
+      class="h-[100vh] w-full relative flex flex-col items-center justify-center overflow-hidden border-b border-white/5"
+    >
       <ParticleBackground />
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-surface-light/10 via-background/80 to-background opacity-80 pointer-events-none z-0"></div>
+      <div
+        class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-surface-light/10 via-background/80 to-background opacity-80 pointer-events-none z-0"
+      ></div>
 
       <div class="flex flex-col justify-center items-center text-center px-6 z-10 relative">
-        <div class="mb-8 inline-flex items-center gap-2 px-4 py-1.5 border border-accent/30 rounded-full bg-accent/5 text-accent text-xs font-mono tracking-widest uppercase animate-pulse-fast">
+        <div
+          class="mb-8 inline-flex items-center gap-2 px-4 py-1.5 border border-accent/30 rounded-full bg-accent/5 text-accent text-xs font-mono tracking-widest uppercase animate-pulse-fast"
+        >
           <span class="w-2 h-2 bg-accent rounded-full animate-ping"></span>
           MagTrade v2.0 Live
         </div>
-        
-        <h1 class="font-bold tracking-tighter text-white mb-8 leading-none hero-title scale-90 md:scale-100 lg:scale-110">
-          <span class="stagger-text" style="--i:1">SPEED</span>
+
+        <h1
+          class="font-bold tracking-tighter text-white mb-8 leading-none hero-title scale-90 md:scale-100 lg:scale-110"
+        >
+          <span class="stagger-text" style="--i: 1">SPEED</span>
           <span class="mx-2 md:mx-4"></span>
-          <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500 stagger-text" style="--i:2">KILLS.</span>
+          <span
+            class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500 stagger-text"
+            style="--i: 2"
+            >KILLS.</span
+          >
           <br />
-          <span class="text-accent stagger-text" style="--i:3">WINNER</span>
+          <span class="text-accent stagger-text" style="--i: 3">WINNER</span>
           <span class="mx-2 md:mx-4"></span>
-          <span class="stagger-text" style="--i:4">TAKES</span>
+          <span class="stagger-text" style="--i: 4">TAKES</span>
           <span class="mx-2 md:mx-4"></span>
-          <span class="stagger-text" style="--i:5">ALL.</span>
+          <span class="stagger-text" style="--i: 5">ALL.</span>
         </h1>
-        
-        <p class="text-lg md:text-xl text-secondary max-w-2xl leading-relaxed mb-12 animate-fade-in" style="animation-delay: 0.8s">
+
+        <p
+          class="text-lg md:text-xl text-secondary max-w-2xl leading-relaxed mb-12 animate-fade-in"
+          style="animation-delay: 0.8s"
+        >
           Dominate the market with millisecond precision.
           <br class="hidden md:block" />
           Powered by cutting-edge AI and distributed ledger technology.
         </p>
 
         <div class="flex flex-col sm:flex-row gap-4">
-          <button 
-            @click="goToShop"
+          <button
             class="group relative overflow-hidden flex items-center gap-3 px-10 py-5 bg-accent text-white font-bold tracking-widest uppercase transition-all duration-300 shadow-[0_0_30px_rgba(227,53,53,0.3)] hover:shadow-[0_0_50px_rgba(227,53,53,0.8)] hover:scale-105"
+            @click="goToShop"
           >
-            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <div
+              class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"
+            ></div>
             <Zap class="w-5 h-5 fill-current relative z-10" />
             <span class="relative z-10">Start Trading</span>
-            <ArrowRight class="w-4 h-4 relative z-10 opacity-0 group-hover:opacity-100 transition-all" />
+            <ArrowRight
+              class="w-4 h-4 relative z-10 opacity-0 group-hover:opacity-100 transition-all"
+            />
           </button>
-          
-          <button 
-            @click="scrollToSection(1)"
+
+          <button
             class="px-10 py-5 border border-white/20 text-white font-bold tracking-widest uppercase hover:bg-white/5 transition-colors"
+            @click="scrollToSection(1)"
           >
             Learn More
           </button>
@@ -145,16 +178,22 @@ onUnmounted(() => observer?.disconnect())
       </div>
 
       <div class="absolute bottom-0 left-0 right-0 z-20 flex flex-col pointer-events-none">
-         <div class="w-full py-3 border-t border-white/5 bg-surface/40 backdrop-blur-xl pointer-events-auto">
-            <MarqueeTicker :duration="40">
-              <div v-for="(item, i) in tickerItems" :key="i" class="flex items-center gap-2 text-xs font-mono text-tertiary uppercase tracking-widest px-4">
-                <Activity class="w-3 h-3 text-accent" />
-                {{ item }}
-              </div>
-            </MarqueeTicker>
-          </div>
-         <StatsCounter class="pointer-events-auto" />
-         <LiveFeed class="pointer-events-auto" />
+        <div
+          class="w-full py-3 border-t border-white/5 bg-surface/40 backdrop-blur-xl pointer-events-auto"
+        >
+          <MarqueeTicker :duration="40">
+            <div
+              v-for="(item, i) in tickerItems"
+              :key="i"
+              class="flex items-center gap-2 text-xs font-mono text-tertiary uppercase tracking-widest px-4"
+            >
+              <Activity class="w-3 h-3 text-accent" />
+              {{ item }}
+            </div>
+          </MarqueeTicker>
+        </div>
+        <StatsCounter class="pointer-events-auto" />
+        <LiveFeed class="pointer-events-auto" />
       </div>
     </section>
 
@@ -172,14 +211,19 @@ onUnmounted(() => observer?.disconnect())
       </div>
     </section>
 
-    <section id="market" class="min-h-screen bg-background border-b border-white/5 relative z-10 py-20">
+    <section
+      id="market"
+      class="min-h-screen bg-background border-b border-white/5 relative z-10 py-20"
+    >
       <div class="mb-16">
         <BrandWall />
       </div>
 
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-          <h2 class="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight">FEATURED DROPS</h2>
+          <h2 class="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+            FEATURED DROPS
+          </h2>
           <p class="text-secondary">The hottest flash sales happening right now</p>
           <div class="h-1 w-20 bg-accent mx-auto mt-4"></div>
         </div>
@@ -189,7 +233,9 @@ onUnmounted(() => observer?.disconnect())
             <TagCloud />
             <div class="p-4 border border-accent/30 rounded-xl bg-accent/5">
               <p class="text-accent text-sm font-semibold mb-2">🔥 Pro Tip</p>
-              <p class="text-secondary text-xs">Use our AI advisor to get success probability before each drop!</p>
+              <p class="text-secondary text-xs">
+                Use our AI advisor to get success probability before each drop!
+              </p>
             </div>
           </div>
 
@@ -199,13 +245,21 @@ onUnmounted(() => observer?.disconnect())
             <div v-if="loading" class="flex justify-center py-20">
               <Loader2 class="w-10 h-10 animate-spin text-accent" />
             </div>
-            
+
             <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <FlashSaleCard v-for="item in flashSales" :key="item.id" :item="item" class="h-full" />
+              <FlashSaleCard
+                v-for="item in flashSales"
+                :key="item.id"
+                :item="item"
+                class="h-full"
+              />
             </div>
-            
+
             <div class="mt-12 text-center">
-              <button @click="goToShop" class="px-8 py-3 border border-white/20 text-white hover:bg-white/5 transition-colors rounded">
+              <button
+                class="px-8 py-3 border border-white/20 text-white hover:bg-white/5 transition-colors rounded"
+                @click="goToShop"
+              >
                 View All Products <ArrowRight class="w-4 h-4 inline ml-2" />
               </button>
             </div>
@@ -214,22 +268,32 @@ onUnmounted(() => observer?.disconnect())
       </div>
     </section>
 
-    <section id="network" class="min-h-screen relative bg-black flex items-center overflow-hidden border-b border-white/5 py-20">
-      <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+    <section
+      id="network"
+      class="min-h-screen relative bg-black flex items-center overflow-hidden border-b border-white/5 py-20"
+    >
+      <div
+        class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]"
+      ></div>
 
-      <div class="max-w-7xl mx-auto px-4 w-full relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div
+        class="max-w-7xl mx-auto px-4 w-full relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+      >
         <div>
-          <div class="inline-flex items-center gap-2 px-3 py-1 border border-accent/30 rounded-full bg-accent/5 text-accent text-xs font-mono mb-6">
+          <div
+            class="inline-flex items-center gap-2 px-3 py-1 border border-accent/30 rounded-full bg-accent/5 text-accent text-xs font-mono mb-6"
+          >
             <Globe class="w-3 h-3" />
             GLOBAL INFRASTRUCTURE
           </div>
-          
+
           <h2 class="text-4xl md:text-6xl font-bold text-white mb-6 tracking-tighter">
-            ZERO LATENCY.<br/>EVERYWHERE.
+            ZERO LATENCY.<br />EVERYWHERE.
           </h2>
-          
+
           <p class="text-secondary text-lg mb-10 leading-relaxed max-w-md">
-            Our distributed edge network ensures your orders hit the matching engine faster than the blink of an eye.
+            Our distributed edge network ensures your orders hit the matching engine faster than the
+            blink of an eye.
           </p>
 
           <div class="flex gap-8 mb-10">
@@ -240,9 +304,13 @@ onUnmounted(() => observer?.disconnect())
           <NodeLatencyList />
         </div>
 
-        <div class="h-[500px] w-full bg-surface/20 rounded-2xl border border-white/5 overflow-hidden relative">
+        <div
+          class="h-[500px] w-full bg-surface/20 rounded-2xl border border-white/5 overflow-hidden relative"
+        >
           <MapVisualization />
-          <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+          <div
+            class="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/80 via-transparent to-transparent"
+          ></div>
           <div class="absolute bottom-6 left-6 text-xs font-mono text-gray-500">
             LIVE MAP VISUALIZATION // SYSTEM ACTIVE
           </div>
@@ -263,8 +331,12 @@ onUnmounted(() => observer?.disconnect())
           <TechStack />
         </div>
 
-        <div class="bg-surface/30 border border-white/10 rounded-2xl overflow-hidden p-8 md:p-12 relative">
-          <div class="absolute top-0 right-0 p-4 text-xs font-mono text-gray-600 uppercase tracking-widest border-l border-b border-white/5">
+        <div
+          class="bg-surface/30 border border-white/10 rounded-2xl overflow-hidden p-8 md:p-12 relative"
+        >
+          <div
+            class="absolute top-0 right-0 p-4 text-xs font-mono text-gray-600 uppercase tracking-widest border-l border-b border-white/5"
+          >
             Architecture Specs
           </div>
 
@@ -272,15 +344,26 @@ onUnmounted(() => observer?.disconnect())
             <div>
               <h3 class="text-2xl font-bold text-white mb-6">Why We Win</h3>
               <ul class="space-y-4">
-                <li v-for="i in ['Event-Driven Architecture', 'In-Memory Matching Engine', 'Geo-Distributed Consistency', 'AI Fraud Detection']" :key="i" class="flex items-center gap-3 text-secondary">
-                  <div class="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-accent">
+                <li
+                  v-for="i in [
+                    'Event-Driven Architecture',
+                    'In-Memory Matching Engine',
+                    'Geo-Distributed Consistency',
+                    'AI Fraud Detection',
+                  ]"
+                  :key="i"
+                  class="flex items-center gap-3 text-secondary"
+                >
+                  <div
+                    class="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-accent"
+                  >
                     <CheckCircle class="w-4 h-4" />
                   </div>
                   {{ i }}
                 </li>
               </ul>
             </div>
-            
+
             <div class="bg-black/50 rounded-xl p-4 border border-white/5">
               <ComparisonTable />
             </div>
@@ -290,11 +373,17 @@ onUnmounted(() => observer?.disconnect())
     </section>
 
     <section id="trust" class="min-h-screen flex flex-col justify-center py-20 bg-black relative">
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-gray-900 via-black to-black opacity-50"></div>
+      <div
+        class="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-gray-900 via-black to-black opacity-50"
+      ></div>
 
       <div class="max-w-7xl w-full mx-auto px-4 relative z-10">
         <div class="mb-20">
-          <h2 class="text-8xl font-bold text-white/5 absolute top-0 w-full text-center transform -translate-y-1/2 select-none pointer-events-none">TRUSTED</h2>
+          <h2
+            class="text-8xl font-bold text-white/5 absolute top-0 w-full text-center transform -translate-y-1/2 select-none pointer-events-none"
+          >
+            TRUSTED
+          </h2>
           <div class="text-center relative">
             <Shield class="w-12 h-12 text-accent mx-auto mb-6" />
             <h2 class="text-4xl font-bold text-white mb-4">BANK-GRADE SECURITY</h2>
@@ -318,7 +407,9 @@ onUnmounted(() => observer?.disconnect())
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           <div>
             <h3 class="text-white font-bold text-lg mb-4">MagTrade</h3>
-            <p class="text-secondary text-sm">The world's fastest flash sale platform. Powered by AI.</p>
+            <p class="text-secondary text-sm">
+              The world's fastest flash sale platform. Powered by AI.
+            </p>
           </div>
           <div>
             <h4 class="text-white font-semibold mb-4">Product</h4>
@@ -331,9 +422,15 @@ onUnmounted(() => observer?.disconnect())
           <div>
             <h4 class="text-white font-semibold mb-4">Company</h4>
             <ul class="space-y-2 text-sm text-secondary">
-              <li><router-link to="/privacy" class="hover:text-white">Privacy Policy</router-link></li>
-              <li><router-link to="/terms" class="hover:text-white">Terms of Service</router-link></li>
-              <li><router-link to="/contact" class="hover:text-white">Contact Support</router-link></li>
+              <li>
+                <router-link to="/privacy" class="hover:text-white">Privacy Policy</router-link>
+              </li>
+              <li>
+                <router-link to="/terms" class="hover:text-white">Terms of Service</router-link>
+              </li>
+              <li>
+                <router-link to="/contact" class="hover:text-white">Contact Support</router-link>
+              </li>
             </ul>
           </div>
           <div>
@@ -345,10 +442,15 @@ onUnmounted(() => observer?.disconnect())
             </ul>
           </div>
         </div>
-        
-        <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+
+        <div
+          class="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4"
+        >
           <p class="text-xs text-gray-600">© 2025 MagTrade System. All rights reserved.</p>
-          <button @click="goToRegister" class="px-6 py-2 bg-accent text-white text-sm font-semibold rounded hover:bg-accent/90 transition-colors">
+          <button
+            class="px-6 py-2 bg-accent text-white text-sm font-semibold rounded hover:bg-accent/90 transition-colors"
+            @click="goToRegister"
+          >
             Join the Revolution
           </button>
         </div>

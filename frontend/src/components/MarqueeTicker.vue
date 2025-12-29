@@ -1,7 +1,7 @@
 <template>
   <div class="marquee-wrapper" :style="wrapperStyle">
     <div class="marquee-track" :style="trackStyle">
-      <div class="marquee-content" ref="contentRef">
+      <div ref="contentRef" class="marquee-content">
         <slot></slot>
       </div>
       <div class="marquee-content">
@@ -12,28 +12,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from 'vue'
 
 interface Props {
-  duration?: number;
-  direction?: 'normal' | 'reverse';
-  pauseOnHover?: boolean;
+  duration?: number
+  direction?: 'normal' | 'reverse'
+  pauseOnHover?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   duration: 20,
   direction: 'normal',
-  pauseOnHover: true
-});
+  pauseOnHover: true,
+})
 
 const wrapperStyle = computed(() => ({
-  '--pause-state': props.pauseOnHover ? 'paused' : 'running'
-}));
+  '--pause-state': props.pauseOnHover ? 'paused' : 'running',
+}))
 
 const trackStyle = computed(() => ({
   '--animation-duration': `${props.duration}s`,
-  '--animation-direction': props.direction
-}));
+  '--animation-direction': props.direction,
+}))
 </script>
 
 <style scoped>

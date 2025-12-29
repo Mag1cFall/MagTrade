@@ -3,14 +3,16 @@
     <div class="max-w-6xl mx-auto px-4 mb-8">
       <div class="text-center">
         <h2 class="text-2xl font-bold text-white mb-2">Trusted By Industry Leaders</h2>
-        <p class="text-secondary text-sm">Partnered with the biggest names in payments and logistics</p>
+        <p class="text-secondary text-sm">
+          Partnered with the biggest names in payments and logistics
+        </p>
       </div>
     </div>
 
     <div class="relative">
       <div class="flex animate-scroll-left">
-        <div 
-          v-for="(partner, index) in [...partners, ...partners]" 
+        <div
+          v-for="(partner, index) in [...partners, ...partners]"
           :key="index"
           class="flex-shrink-0 px-8 py-4 mx-4 bg-white/5 rounded-lg border border-white/10 hover:border-accent/30 transition-colors cursor-pointer group"
         >
@@ -19,7 +21,9 @@
               {{ partner.emoji }}
             </div>
             <div>
-              <div class="text-white font-semibold group-hover:text-accent transition-colors">{{ partner.name }}</div>
+              <div class="text-white font-semibold group-hover:text-accent transition-colors">
+                {{ partner.name }}
+              </div>
               <div class="text-xs text-secondary">{{ partner.type }}</div>
             </div>
           </div>
@@ -39,7 +43,7 @@ const partners = [
   { name: 'JD Logistics', emoji: '🚚', type: 'Logistics' },
   { name: 'Cloudflare', emoji: '☁️', type: 'Infrastructure' },
   { name: 'AWS', emoji: '🔶', type: 'Infrastructure' },
-  { name: 'Google Cloud', emoji: '🌐', type: 'Infrastructure' }
+  { name: 'Google Cloud', emoji: '🌐', type: 'Infrastructure' },
 ]
 </script>
 

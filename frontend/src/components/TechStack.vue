@@ -2,7 +2,10 @@
   <div class="tech-stack-grid">
     <div v-for="(tech, i) in techStack" :key="i" class="tech-item group">
       <div class="icon-box">
-        <component :is="tech.icon" class="w-8 h-8 text-white group-hover:text-accent transition-colors" />
+        <component
+          :is="tech.icon"
+          class="w-8 h-8 text-white group-hover:text-accent transition-colors"
+        />
       </div>
       <div class="tech-info">
         <div class="tech-name">{{ tech.name }}</div>
@@ -13,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { Cpu, Database, Globe, Network, Shield, Zap, Cloud, Code } from 'lucide-vue-next';
+import { Cpu, Database, Globe, Network, Shield, Zap, Cloud, Code } from 'lucide-vue-next'
 
 const techStack = [
   { name: 'Golang', desc: 'High-performance Backend', icon: Zap },
@@ -24,7 +27,7 @@ const techStack = [
   { name: 'Docker', desc: 'Containerization', icon: Cloud },
   { name: 'WebSocket', desc: 'Real-time Transport', icon: Globe },
   { name: 'JWT', desc: 'Secure Auth', icon: Shield },
-];
+]
 </script>
 
 <style scoped>

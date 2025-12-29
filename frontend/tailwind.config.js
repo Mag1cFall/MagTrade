@@ -1,22 +1,19 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{vue,js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
         // 极简黑白灰基调
         background: '#050505', // 深邃黑背景
-        surface: '#121212',    // 卡片/表面颜色
+        surface: '#121212', // 卡片/表面颜色
         'surface-light': '#1E1E1E', // 略亮的表面
-        border: '#2A2A2A',     // 极细边框
+        border: '#2A2A2A', // 极细边框
 
         // 文字颜色
-        primary: '#FFFFFF',    // 主标题
-        secondary: '#A1A1AA',  // 次要文字/正文
-        tertiary: '#52525B',   // 辅助文字/占位符
+        primary: '#FFFFFF', // 主标题
+        secondary: '#A1A1AA', // 次要文字/正文
+        tertiary: '#52525B', // 辅助文字/占位符
 
         // 强调色 - 赤焰红 (仅用于行动点和紧迫感)
         accent: '#FF3B30',

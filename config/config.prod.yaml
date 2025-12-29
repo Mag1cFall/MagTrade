@@ -9,7 +9,7 @@ database:
   user: "${DB_USER}"
   password: "${DB_PASSWORD}"
   dbname: "${DB_NAME}"
-  sslmode: "require"
+  sslmode: "disable"
   timezone: "Asia/Shanghai"
   max_idle_conns: 20
   max_open_conns: 200

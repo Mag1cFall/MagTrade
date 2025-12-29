@@ -6,13 +6,13 @@ import { getMe, login as apiLogin, register as apiRegister } from '@/api/auth'
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('access_token'))
   const user = ref<User | null>(null)
-  
+
   // 从 localStorage 恢复用户信息（如果有）
   const storedUser = localStorage.getItem('user_info')
   if (storedUser) {
     try {
       user.value = JSON.parse(storedUser)
-    } catch (e) {
+    } catch {
       localStorage.removeItem('user_info')
     }
   }
@@ -56,8 +56,8 @@ export const useAuthStore = defineStore('auth', () => {
       if (res.code === 0) {
         setUser(res.data)
       }
-    } catch (e) {
-      // 这里的错误通常由 http interceptor 处理，但如果是初始加载失败，可以清除状态
+    } catch {
+      // Error handled by http interceptor
       if (!user.value) {
         token.value = null
         localStorage.removeItem('access_token')
@@ -82,6 +82,6 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     fetchUser,
-    logout
+    logout,
   }
 })

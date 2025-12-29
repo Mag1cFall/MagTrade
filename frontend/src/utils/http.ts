@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { AxiosInstance, AxiosResponse } from 'axios'
 
 const http: AxiosInstance = axios.create({
-  baseURL: '/api/v1',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ http.interceptors.response.use(
     }
 
     const { code, message } = response.data
-    
+
     // Business logic error handling
     if (code !== undefined && code !== 0) {
       return Promise.reject(new Error(message || 'Unknown Error'))
@@ -72,20 +72,20 @@ http.interceptors.response.use(
 
         // Call refresh token endpoint directly using axios to avoid interceptor loop
         const response = await axios.post('/api/v1/auth/refresh', {
-          refresh_token: refreshToken
+          refresh_token: refreshToken,
         })
 
         const { access_token, refresh_token: new_refresh_token } = response.data.data
-        
+
         localStorage.setItem('access_token', access_token)
         if (new_refresh_token) {
           localStorage.setItem('refresh_token', new_refresh_token)
         }
 
         // Process queue
-        requestsQueue.forEach(cb => cb(access_token))
+        requestsQueue.forEach((cb) => cb(access_token))
         requestsQueue = []
-        
+
         originalRequest.headers.Authorization = `Bearer ${access_token}`
         return http(originalRequest)
       } catch (refreshError) {
@@ -93,7 +93,7 @@ http.interceptors.response.use(
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
         localStorage.removeItem('user_info')
-        
+
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login'
         }

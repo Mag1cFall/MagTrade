@@ -1,27 +1,27 @@
 <template>
-  <div 
-    class="flow-border-card" 
+  <div
+    class="flow-border-card"
     :style="{
       '--border-color': color || '#e33535',
       '--border-width': borderWidth || '1px',
-      '--border-radius': borderRadius || '0px'
+      '--border-radius': borderRadius || '0px',
     }"
   >
     <div class="content">
       <slot></slot>
     </div>
-    
-    <div class="border-gradient" v-if="active"></div>
+
+    <div v-if="active" class="border-gradient"></div>
   </div>
 </template>
 
 <script setup lang="ts">
 defineProps<{
-  color?: string;
-  active?: boolean;
-  borderWidth?: string;
-  borderRadius?: string;
-}>();
+  color?: string
+  active?: boolean
+  borderWidth?: string
+  borderRadius?: string
+}>()
 </script>
 
 <style scoped>
@@ -48,9 +48,9 @@ defineProps<{
   width: 200%;
   aspect-ratio: 1;
   background: conic-gradient(
-    transparent 0deg, 
-    transparent 80deg, 
-    var(--border-color) 120deg, 
+    transparent 0deg,
+    transparent 80deg,
+    var(--border-color) 120deg,
     transparent 180deg,
     transparent 360deg
   );
@@ -60,7 +60,11 @@ defineProps<{
 }
 
 @keyframes rotate {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 </style>

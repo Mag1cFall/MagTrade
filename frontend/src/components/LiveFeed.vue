@@ -6,7 +6,12 @@
     </div>
     <div class="feed-list" @mouseenter="paused = true" @mouseleave="paused = false">
       <TransitionGroup name="list" tag="div">
-        <div v-for="item in visibleItems" :key="item.id" class="feed-item" @click="showDetail(item)">
+        <div
+          v-for="item in visibleItems"
+          :key="item.id"
+          class="feed-item"
+          @click="showDetail(item)"
+        >
           <div class="item-avatar">{{ item.user.charAt(0) }}</div>
           <div class="item-content">
             <div class="item-row">
@@ -23,14 +28,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue'
 
 interface FeedItem {
-  id: string;
-  user: string;
-  action: string;
-  product: string;
-  time: string;
+  id: string
+  user: string
+  action: string
+  product: string
+  time: string
 }
 
 const rawData = [
@@ -40,45 +45,45 @@ const rawData = [
   { user: 'User_8821', action: 'ORDERED', product: 'MacBook Pro M3', time: '8s ago' },
   { user: 'Trader_X', action: 'SNIPED', product: 'Switch OLED', time: '12s ago' },
   { user: 'Ghost_Protocol', action: 'LOCKED', product: 'PS5 Slim', time: '15s ago' },
-];
+]
 
-const visibleItems = ref<FeedItem[]>([]);
-const paused = ref(false);
-let interval: any;
+const visibleItems = ref<FeedItem[]>([])
+const paused = ref(false)
+let interval: any
 
-const generateId = () => Math.random().toString(36).substr(2, 9);
+const generateId = () => Math.random().toString(36).substr(2, 9)
 
 const addNextItem = () => {
-  if (paused.value) return;
-  
-  const randomItem = rawData[Math.floor(Math.random() * rawData.length)];
-  const newItem = { ...randomItem, id: generateId(), time: 'Just now' };
-  
-  visibleItems.value.forEach(item => {
-    if (item.time === 'Just now') item.time = '2s ago';
-    else if (item.time === '2s ago') item.time = '5s ago';
-    else item.time = '10s+';
-  });
+  if (paused.value) return
 
-  visibleItems.value.unshift(newItem);
+  const randomItem = rawData[Math.floor(Math.random() * rawData.length)]
+  const newItem = { ...randomItem, id: generateId(), time: 'Just now' }
+
+  visibleItems.value.forEach((item) => {
+    if (item.time === 'Just now') item.time = '2s ago'
+    else if (item.time === '2s ago') item.time = '5s ago'
+    else item.time = '10s+'
+  })
+
+  visibleItems.value.unshift(newItem)
   if (visibleItems.value.length > 4) {
-    visibleItems.value.pop();
+    visibleItems.value.pop()
   }
-};
+}
 
 const showDetail = (item: FeedItem) => {
-  console.log('Viewing details for', item);
-};
+  console.log('Viewing details for', item)
+}
 
 onMounted(() => {
   // 初始化
-  visibleItems.value = rawData.slice(0, 3).map(i => ({...i, id: generateId()}));
-  interval = setInterval(addNextItem, 2500);
-});
+  visibleItems.value = rawData.slice(0, 3).map((i) => ({ ...i, id: generateId() }))
+  interval = setInterval(addNextItem, 2500)
+})
 
 onUnmounted(() => {
-  clearInterval(interval);
-});
+  clearInterval(interval)
+})
 </script>
 
 <style scoped>
@@ -94,7 +99,7 @@ onUnmounted(() => {
   border-radius: 4px;
   padding: 16px;
   z-index: 20;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   font-family: 'JetBrains Mono', monospace;
 }
 
@@ -130,7 +135,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 8px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
@@ -138,8 +143,8 @@ onUnmounted(() => {
 }
 
 .feed-item:hover {
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
   transform: translateX(5px);
 }
 
@@ -215,9 +220,15 @@ onUnmounted(() => {
 }
 
 @keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.4; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 768px) {

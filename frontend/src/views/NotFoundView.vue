@@ -12,9 +12,9 @@ const router = useRouter()
     <p class="text-secondary max-w-md mb-8">
       The coordinates you are attempting to reach do not exist in this dimension.
     </p>
-    <button 
-      @click="router.push('/')" 
+    <button
       class="px-8 py-3 bg-white text-black font-bold tracking-widest uppercase hover:bg-gray-200 transition-colors flex items-center gap-2"
+      @click="router.push('/')"
     >
       <ArrowLeft class="w-4 h-4" /> Return to Base
     </button>

@@ -3,7 +3,7 @@ import type { ApiResponse, OrderListResponse, Order } from '@/types'
 
 export const getOrders = (page = 1, pageSize = 20) => {
   return http.get<any, ApiResponse<OrderListResponse>>('/orders', {
-    params: { page, page_size: pageSize }
+    params: { page, page_size: pageSize },
   })
 }
 

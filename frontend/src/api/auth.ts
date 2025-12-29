@@ -22,5 +22,7 @@ export const getCaptcha = (identifier: string) => {
 }
 
 export const checkCaptcha = (identifier: string) => {
-  return http.get<any, { needs_captcha: boolean; is_locked: boolean }>(`/captcha/check?identifier=${identifier}`)
+  return http.get<any, { needs_captcha: boolean; is_locked: boolean }>(
+    `/captcha/check?identifier=${identifier}`
+  )
 }

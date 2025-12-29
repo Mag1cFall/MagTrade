@@ -1,6 +1,6 @@
 <template>
   <div class="testimonials-container">
-    <div class="cards-wrapper" ref="wrapper">
+    <div ref="wrapper" class="cards-wrapper">
       <div v-for="(item, i) in testimonials" :key="i" class="testimonial-card">
         <div class="quote-symbol">"</div>
         <p class="feedback-text">{{ item.text }}</p>
@@ -18,13 +18,37 @@
 
 <script setup lang="ts">
 const testimonials = [
-  { name: 'Elon M.', role: 'Tech Entrepreneur', text: 'The latency on MagTrade is absolutely unreal. It feels like direct neural interface trading.' },
-  { name: 'Sarah C.', role: 'Pro Scalper', text: "I've used every platform out there. Nothing comes close to the execution speed here." },
-  { name: 'David L.', role: 'Hedge Fund Mgr', text: 'Secure, reliable, and ridiculously fast. The new standard for high-frequency systems.' },
-  { name: 'Jessica W.', role: 'Crypto Whale', text: 'Finally, a platform that can handle the volatility without crashing.' },
-  { name: 'Wei Z.', role: 'Quant Analyst', text: "The Obsidian engine matching efficiency is the best I've seen. Zero slippage." },
-  { name: 'Akira T.', role: 'System Architect', text: 'From a technical perspective, their distributed node layout is a work of art.' },
-];
+  {
+    name: 'Elon M.',
+    role: 'Tech Entrepreneur',
+    text: 'The latency on MagTrade is absolutely unreal. It feels like direct neural interface trading.',
+  },
+  {
+    name: 'Sarah C.',
+    role: 'Pro Scalper',
+    text: "I've used every platform out there. Nothing comes close to the execution speed here.",
+  },
+  {
+    name: 'David L.',
+    role: 'Hedge Fund Mgr',
+    text: 'Secure, reliable, and ridiculously fast. The new standard for high-frequency systems.',
+  },
+  {
+    name: 'Jessica W.',
+    role: 'Crypto Whale',
+    text: 'Finally, a platform that can handle the volatility without crashing.',
+  },
+  {
+    name: 'Wei Z.',
+    role: 'Quant Analyst',
+    text: "The Obsidian engine matching efficiency is the best I've seen. Zero slippage.",
+  },
+  {
+    name: 'Akira T.',
+    role: 'System Architect',
+    text: 'From a technical perspective, their distributed node layout is a work of art.',
+  },
+]
 </script>
 
 <style scoped>

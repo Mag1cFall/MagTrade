@@ -16,6 +16,7 @@
 .env
 .env.local
 .env.*.local
+docker/.env
 
 # Local config with secrets (use config.dev.yaml.example as template)
 config/config.dev.yaml

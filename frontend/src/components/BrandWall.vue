@@ -5,21 +5,21 @@
       <div v-for="(brand, i) in brands" :key="`a-${i}`" class="brand-item group">
         <component :is="brand.icon" class="brand-icon" />
         <span class="brand-name">{{ brand.name }}</span>
-        
+
         <!-- Hover Popover -->
         <div class="brand-popover">
           <div class="pop-title">{{ brand.name }}</div>
           <div class="pop-desc">Official Partner</div>
         </div>
       </div>
-      
+
       <!-- 克隆组实现无缝滚动 -->
       <div v-for="(brand, i) in brands" :key="`b-${i}`" class="brand-item group">
         <component :is="brand.icon" class="brand-icon" />
         <span class="brand-name">{{ brand.name }}</span>
-        
-         <!-- Hover Popover -->
-         <div class="brand-popover">
+
+        <!-- Hover Popover -->
+        <div class="brand-popover">
           <div class="pop-title">{{ brand.name }}</div>
           <div class="pop-desc">Official Partner</div>
         </div>
@@ -29,8 +29,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { Apple, Smartphone, Laptop, Headphones, Watch, Gamepad2, Camera, Speaker } from 'lucide-vue-next';
+import { computed } from 'vue'
+import {
+  Apple,
+  Smartphone,
+  Laptop,
+  Headphones,
+  Watch,
+  Gamepad2,
+  Camera,
+  Speaker,
+} from 'lucide-vue-next'
 
 const brands = [
   { name: 'Apple', icon: Apple },
@@ -42,12 +51,12 @@ const brands = [
   { name: 'Canon', icon: Camera },
   { name: 'JBL', icon: Speaker },
   { name: 'Xiaomi', icon: Smartphone }, // 复用图标
-  { name: 'Asus', icon: Laptop }
-];
+  { name: 'Asus', icon: Laptop },
+]
 
 const trackStyle = computed(() => ({
-  animationDuration: '30s'
-}));
+  animationDuration: '30s',
+}))
 </script>
 
 <style scoped>
@@ -62,7 +71,7 @@ const trackStyle = computed(() => ({
 
 .brand-wall-container::before,
 .brand-wall-container::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   width: 150px;
@@ -158,7 +167,11 @@ const trackStyle = computed(() => ({
 }
 
 @keyframes scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 </style>

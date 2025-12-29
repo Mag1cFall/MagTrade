@@ -27,28 +27,28 @@ const router = createRouter({
           path: 'orders',
           name: 'orders',
           component: () => import('@/views/OrdersView.vue'),
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true },
         },
         {
           path: 'admin',
           name: 'admin',
           component: () => import('@/views/AdminView.vue'),
-          meta: { requiresAuth: true }
+          meta: { requiresAuth: true },
         },
         {
           path: 'privacy',
-          redirect: '/legal'
+          redirect: '/legal',
         },
         {
           path: 'terms',
-          redirect: '/legal'
+          redirect: '/legal',
         },
         {
           path: 'contact',
           name: 'contact',
           component: () => import('@/views/ContactView.vue'),
-        }
-      ]
+        },
+      ],
     },
     {
       path: '/login',
@@ -69,7 +69,7 @@ const router = createRouter({
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('@/views/NotFoundView.vue'),
-    }
+    },
   ],
   scrollBehavior(_to, _from, savedPosition) {
     if (savedPosition) {
@@ -77,7 +77,7 @@ const router = createRouter({
     } else {
       return { top: 0, behavior: 'smooth' }
     }
-  }
+  },
 })
 
 router.beforeEach(async (to, _from, next) => {

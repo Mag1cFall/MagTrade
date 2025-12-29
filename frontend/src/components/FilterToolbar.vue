@@ -1,8 +1,8 @@
 <template>
   <div class="filter-toolbar">
     <div class="filter-group">
-      <div 
-        v-for="filter in filters" 
+      <div
+        v-for="filter in filters"
         :key="filter.id"
         class="filter-btn"
         :class="{ active: modelValue === filter.id }"
@@ -24,20 +24,20 @@
 
 <script setup lang="ts">
 interface Filter {
-  id: string;
-  label: string;
+  id: string
+  label: string
 }
 
 defineProps<{
-  modelValue: string;
-}>();
+  modelValue: string
+}>()
 
-defineEmits(['update:modelValue']);
+defineEmits(['update:modelValue'])
 
 const filters: Filter[] = [
   { id: 'active', label: '进行中' },
   { id: 'upcoming', label: '即将开始' },
-];
+]
 </script>
 
 <style scoped>

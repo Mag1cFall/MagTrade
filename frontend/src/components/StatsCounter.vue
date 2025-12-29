@@ -14,55 +14,69 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue'
 
 interface StatItem {
-  label: string;
-  value: number;
-  displayValue: string;
-  unit: string;
-  percent: number;
-  increment: number;
+  label: string
+  value: number
+  displayValue: string
+  unit: string
+  percent: number
+  increment: number
 }
 
 const stats = ref<StatItem[]>([
-  { label: 'TOTAL VOLUME', value: 482000, displayValue: '482,000', unit: '$', percent: 75, increment: 120 },
-  { label: 'ACTIVE USERS', value: 2450, displayValue: '2,450', unit: '', percent: 60, increment: 5 },
+  {
+    label: 'TOTAL VOLUME',
+    value: 482000,
+    displayValue: '482,000',
+    unit: '$',
+    percent: 75,
+    increment: 120,
+  },
+  {
+    label: 'ACTIVE USERS',
+    value: 2450,
+    displayValue: '2,450',
+    unit: '',
+    percent: 60,
+    increment: 5,
+  },
   { label: 'SYS LOAD', value: 34, displayValue: '34.2', unit: '%', percent: 34, increment: 0.1 },
-]);
+])
 
 // 简单的数字加法模拟真实感
-let timer: any;
+let timer: any
 
 const updateStats = () => {
-  stats.value.forEach(stat => {
+  stats.value.forEach((stat) => {
     // 随机增加
     if (Math.random() > 0.5) {
-      stat.value += stat.increment * Math.random();
-      
+      stat.value += stat.increment * Math.random()
+
       // 格式化显示
       if (stat.label === 'SYS LOAD') {
         // 负载波动
-        stat.value = 30 + Math.random() * 15;
-        stat.displayValue = stat.value.toFixed(1);
-        stat.percent = stat.value;
+        stat.value = 30 + Math.random() * 15
+        stat.displayValue = stat.value.toFixed(1)
+        stat.percent = stat.value
       } else {
-        stat.displayValue = Math.floor(stat.value).toLocaleString();
+        stat.displayValue = Math.floor(stat.value).toLocaleString()
         // 简单计算百分比用于进度条动画（假定一个最大值）
-        if (stat.label.includes('VOLUME')) stat.percent = (stat.value % 1000000) / 10000;
-        if (stat.label.includes('USERS')) stat.percent = (stat.value % 5000) / 50;
+        if (stat.label.includes('VOLUME')) stat.percent = (stat.value % 1000000) / 10000
+        if (stat.label.includes('USERS')) stat.percent = (stat.value % 5000) / 50
       }
     }
-  });
-};
+  })
+}
 
 onMounted(() => {
-  timer = setInterval(updateStats, 1000);
-});
+  timer = setInterval(updateStats, 1000)
+})
 
 onUnmounted(() => {
-  clearInterval(timer);
-});
+  clearInterval(timer)
+})
 </script>
 
 <style scoped>

@@ -2,8 +2,8 @@
   <aside class="sidebar">
     <div class="sidebar__line"></div>
     <ul class="sidebar__pagers">
-      <li 
-        v-for="(_item, index) in sections" 
+      <li
+        v-for="(_item, index) in sections"
         :key="index"
         :class="['sidebar__num', { 'sidebar__num--active': activeIndex === index }]"
         @click="$emit('change', index)"
@@ -17,14 +17,14 @@
 <script setup lang="ts">
 // defineProps and defineEmits are compiler macros and do not need to be imported
 
-const props = defineProps<{
+defineProps<{
   sections: string[]
   activeIndex: number
 }>()
 
-const emit = defineEmits(['change'])
+defineEmits(['change'])
 
-const formatNumber = (num: number) => num < 10 ? `0${num}` : `${num}`
+const formatNumber = (num: number) => (num < 10 ? `0${num}` : `${num}`)
 </script>
 
 <style scoped>
