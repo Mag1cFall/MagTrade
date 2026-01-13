@@ -29,9 +29,10 @@ type Config struct {
 
 // ServerConfig HTTP 伺服器配置
 type ServerConfig struct {
-	Host string `mapstructure:"host"`
-	Port int    `mapstructure:"port"`
-	Mode string `mapstructure:"mode"` // debug/release
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	GRPCPort int    `mapstructure:"grpc_port"`
+	Mode     string `mapstructure:"mode"` // debug/release
 }
 
 // DatabaseConfig PostgreSQL 資料庫配置

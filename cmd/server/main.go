@@ -17,6 +17,7 @@ import (
 	"github.com/Mag1cFall/magtrade/internal/cache"
 	"github.com/Mag1cFall/magtrade/internal/config"
 	"github.com/Mag1cFall/magtrade/internal/database"
+	magrpc "github.com/Mag1cFall/magtrade/internal/grpc"
 	"github.com/Mag1cFall/magtrade/internal/handler"
 	"github.com/Mag1cFall/magtrade/internal/logger"
 	"github.com/Mag1cFall/magtrade/internal/mq"
@@ -69,6 +70,16 @@ func main() {
 		log.Fatal("failed to init redis", zap.Error(err))
 	}
 	defer cache.Close()
+
+	// 啟動 gRPC 庫存服務
+	if cfg.Server.GRPCPort > 0 {
+		grpcAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.GRPCPort)
+		grpcServer, err := magrpc.StartGRPCServer(grpcAddr, log)
+		if err != nil {
+			log.Fatal("failed to start gRPC server", zap.Error(err))
+		}
+		defer grpcServer.GracefulStop()
+	}
 
 	// 初始化雪花演算法 ID 產生器，參數 1 是機器節點編號
 	if err := utils.InitSnowflake(1); err != nil {
