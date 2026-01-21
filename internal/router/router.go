@@ -62,9 +62,7 @@ func Setup(cfg *config.Config, producer *mq.Producer, wsHub *handler.WSHub, log 
 	})
 
 	// 健康檢查
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
-	})
+	r.GET("/health", metricsHandler.HealthCheck)
 
 	// 監控指標
 	r.GET("/metrics", metricsHandler.GetMetrics)

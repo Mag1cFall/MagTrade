@@ -23,6 +23,14 @@ redis:
   db: 0
   pool_size: 200
 
+email:
+  smtp_host: "${SMTP_HOST}"
+  smtp_port: 465
+  smtp_user: "${SMTP_USER}"
+  smtp_password: "${SMTP_PASSWORD}"
+  from_address: "${SMTP_USER}"
+  from_name: "MagTrade"
+
 kafka:
   brokers:
     - "${KAFKA_BROKER_1}"
@@ -44,7 +52,7 @@ ai:
   api_key: "${AI_API_KEY}"
   model: "deepseek-ai/DeepSeek-V3.2"
   max_tokens: 8192
-  temperature: 0.7
+  temperature: 0
 
 log:
   level: "info"

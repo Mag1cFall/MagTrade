@@ -226,10 +226,32 @@ func expandEnvVars(c *Config) {
 	// Kafka 配置
 	if v := os.Getenv("KAFKA_BROKER_1"); v != "" {
 		c.Kafka.Brokers = []string{v}
+		if v2 := os.Getenv("KAFKA_BROKER_2"); v2 != "" {
+			c.Kafka.Brokers = append(c.Kafka.Brokers, v2)
+		}
 	} else {
 		for i, broker := range c.Kafka.Brokers {
 			c.Kafka.Brokers[i] = expandEnv(broker)
 		}
+	}
+
+	// Email 配置
+	if v := os.Getenv("SMTP_HOST"); v != "" {
+		c.Email.SMTPHost = v
+	} else {
+		c.Email.SMTPHost = expandEnv(c.Email.SMTPHost)
+	}
+	if v := os.Getenv("SMTP_USER"); v != "" {
+		c.Email.SMTPUser = v
+		c.Email.FromAddress = v // 預設發件地址與使用者相同
+	} else {
+		c.Email.SMTPUser = expandEnv(c.Email.SMTPUser)
+		c.Email.FromAddress = expandEnv(c.Email.FromAddress)
+	}
+	if v := os.Getenv("SMTP_PASSWORD"); v != "" {
+		c.Email.SMTPPassword = v
+	} else {
+		c.Email.SMTPPassword = expandEnv(c.Email.SMTPPassword)
 	}
 }
 

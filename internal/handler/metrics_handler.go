@@ -1,13 +1,16 @@
 // 監控指標 HTTP 處理器
 //
 // 本檔案提供系統監控指標查詢功能
-// 目前僅包含資料庫連線池狀態
+// 包含：資料庫連線池狀態、Redis 連線狀態
 // 可擴展為 Prometheus 格式
 package handler
 
 import (
+	"context"
 	"net/http"
+	"time"
 
+	"github.com/Mag1cFall/magtrade/internal/cache"
 	"github.com/Mag1cFall/magtrade/internal/database"
 	"github.com/gin-gonic/gin"
 )
@@ -20,7 +23,7 @@ func NewMetricsHandler() *MetricsHandler {
 }
 
 // GetMetrics 取得系統監控指標
-// GET /api/v1/metrics
+// GET /metrics
 func (h *MetricsHandler) GetMetrics(c *gin.Context) {
 	db := database.Get()
 	sqlDB, err := db.DB()
@@ -45,3 +48,50 @@ func (h *MetricsHandler) GetMetrics(c *gin.Context) {
 		},
 	})
 }
+
+// HealthCheck 完整健康檢查
+// GET /health
+func (h *MetricsHandler) HealthCheck(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	status := "ok"
+	httpStatus := http.StatusOK
+
+	// 資料庫檢查
+	dbStatus := "ok"
+	db := database.Get()
+	sqlDB, err := db.DB()
+	if err != nil {
+		dbStatus = "error: " + err.Error()
+		status = "degraded"
+	} else if err := sqlDB.PingContext(ctx); err != nil {
+		dbStatus = "error: " + err.Error()
+		status = "degraded"
+	}
+
+	// Redis 檢查
+	redisStatus := "ok"
+	rdb := cache.Get()
+	if rdb == nil {
+		redisStatus = "not initialized"
+		status = "degraded"
+	} else if _, err := rdb.Ping(ctx).Result(); err != nil {
+		redisStatus = "error: " + err.Error()
+		status = "degraded"
+	}
+
+	if status == "degraded" {
+		httpStatus = http.StatusServiceUnavailable
+	}
+
+	c.JSON(httpStatus, gin.H{
+		"status": status,
+		"components": gin.H{
+			"database": dbStatus,
+			"redis":    redisStatus,
+		},
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
