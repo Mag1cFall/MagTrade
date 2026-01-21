@@ -1,12 +1,12 @@
 MagTrade 项目上下文
 
-部署地址: https://gcptw.yukiyuki.cfd
+部署地址: https://magtrade.yukiyuki.cfd
 项目路径: /home/mgf/MagTrade
 
 SSL证书:
   证书: /root/ygkkkca/cert.crt
   私钥: /root/ygkkkca/private.key
-  域名: gcptw.yukiyuki.cfd
+  域名: magtrade.yukiyuki.cfd
 
 Nginx配置: /etc/nginx/sites-enabled/magtrade
 Docker配置: /home/mgf/MagTrade/docker/docker-compose.yml
@@ -58,10 +58,11 @@ API路由:
   数据库: PostgreSQL 16
   缓存: Redis 7 + Lua脚本原子操作
   消息队列: Kafka (异步下单)
-  AI: SiliconFlow + DeepSeek-V3.2
+  AI: SiliconFlow + DeepSeek-V**3.2**
 
 常用命令:
-  make build    零停机更新后端
-  make logs     查看日志
-  make backup   备份数据库
-  make db       进入数据库CLI
+  cd docker && sudo docker compose up -d --build --no-deps backend  # 零停机更新
+  cd docker && sudo docker compose logs -f backend                   # 查看日志
+  sudo docker exec mt-postgres pg_dump -U postgres magtrade > backup.sql  # 备份
+  sudo docker exec -it mt-postgres psql -U postgres -d magtrade      # 进入数据库
+

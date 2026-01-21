@@ -92,9 +92,8 @@
   A记录: 35.194.138.153
   代理: 已开启 (橙色云)
 
-需要操作:
-  1. 申请新SSL证书:
-     acme.sh --issue -d gcptw.yukiyuki.cfd -d magtrade.yukiyuki.cfd --webroot /var/www/html
+已完成:
+  1. SSL证书已申请 (Let's Encrypt, 包含 magtrade.yukiyuki.cfd)
 
   2. 或使用 Cloudflare Origin Certificate:
      Cloudflare Dashboard -> SSL/TLS -> Origin Server -> Create Certificate
@@ -124,11 +123,11 @@
 
 ## 常用命令
 
-make build      零停机更新后端
-make logs       查看日志
-make backup     备份数据库
-make db         进入数据库CLI
-make health     检查服务状态
+cd docker && sudo docker compose up -d --build --no-deps backend  # 零停机更新
+cd docker && sudo docker compose logs -f backend                   # 查看日志
+sudo docker exec mt-postgres pg_dump -U postgres magtrade > backup.sql  # 备份
+sudo docker exec -it mt-postgres psql -U postgres -d magtrade      # 进入数据库
+curl -s https://magtrade.yukiyuki.cfd/health | jq                  # 健康检查
 
 ## 运维信息
 
@@ -137,6 +136,4 @@ Nginx配置: /etc/nginx/sites-enabled/magtrade
 Docker配置: /home/mgf/MagTrade/docker/docker-compose.yml
 环境变量: /home/mgf/MagTrade/docker/.env (敏感,不提交)
 
-访问地址:
-  https://gcptw.yukiyuki.cfd (原)
-  https://magtrade.yukiyuki.cfd (新,通过CF)
+访问地址: https://magtrade.yukiyuki.cfd (通过 Cloudflare)
