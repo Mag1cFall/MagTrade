@@ -1,3 +1,6 @@
+# Gemini agent files (may contain secrets)
+.gemini/
+
 .idea/
 .vscode/
 *.exe
