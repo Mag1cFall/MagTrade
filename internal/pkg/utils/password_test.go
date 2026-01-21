@@ -1,3 +1,8 @@
+// 密碼雜湊工具單元測試
+//
+// 測試覆蓋：
+// - HashPassword: bcrypt 雜湊生成（非空、非明文、鹽值唯一性）
+// - CheckPassword: 密碼驗證（正確密碼、錯誤密碼、空密碼、空雜湊）
 package utils
 
 import (

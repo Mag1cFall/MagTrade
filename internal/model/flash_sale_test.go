@@ -1,3 +1,8 @@
+// 秒殺活動模型單元測試
+//
+// 測試覆蓋：
+// - FlashSale.IsActive: 活動是否進行中（狀態 + 時間範圍判斷）
+// - FlashSale.IsPending: 活動是否待開始（狀態 + 開始時間判斷）
 package model
 
 import (

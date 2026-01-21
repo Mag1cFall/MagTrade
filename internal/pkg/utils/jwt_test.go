@@ -1,3 +1,10 @@
+// JWT Token 工具單元測試
+//
+// 測試覆蓋：
+// - GenerateTokenPair: Access Token 和 Refresh Token 生成
+// - ValidateAccessToken: Access Token 驗證（有效、無效、過期、錯誤密鑰）
+// - ValidateRefreshToken: Refresh Token 驗證
+// - Claims 結構體欄位驗證（UserID, Username, Role）
 package utils
 
 import (

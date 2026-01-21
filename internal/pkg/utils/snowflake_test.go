@@ -1,3 +1,14 @@
+// Snowflake ID 生成器單元測試
+//
+// 測試覆蓋：
+// - InitSnowflake: 初始化生成器
+// - GenerateID: 基本 ID 生成與唯一性
+// - GenerateID_Uniqueness: 大量生成唯一性驗證（10000 個）
+// - GenerateID_Concurrent: 並發生成唯一性驗證（100 goroutines × 100 IDs）
+// - GenerateOrderNo: 訂單號生成（FS 前綴）
+// - GenerateTicket: 搶購憑證生成（TK 前綴）
+// - BenchmarkGenerateID: ID 生成性能基準測試
+// - BenchmarkGenerateOrderNo: 訂單號生成性能基準測試
 package utils
 
 import (

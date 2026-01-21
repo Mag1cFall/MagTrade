@@ -1,3 +1,10 @@
+// 訂單模型單元測試
+//
+// 測試覆蓋：
+// - Order.CanPay: 訂單是否可付款（僅待付款狀態可付款）
+// - Order.CanCancel: 訂單是否可取消（僅待付款狀態可取消）
+// - Order.CanRefund: 訂單是否可退款（僅已付款狀態可退款）
+// - OrderStatus.String: 狀態枚舉字串轉換
 package model
 
 import (
